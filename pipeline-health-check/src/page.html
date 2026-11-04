@@ -1,0 +1,1873 @@
+<title>Pipeline Health Check</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@85,600;85,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column operations sheet; assumptions strip, then tabs for Coverage, Hygiene, Commission, Metrics, Method. */
+:root {
+  --bg: #f4f6f9; --surface: #ffffff; --ink: #172033; --muted: #5b6577; --line: #dde2ea;
+  --accent: #2b50aa; --accent-soft: #e6ecf8; --tab: #e8ecf2;
+  --good: #1f7a4d; --good-soft: #e3f3ea; --warn: #9a6200; --warn-soft: #fbf0d9; --bad: #b3322b; --bad-soft: #f9e4e2;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #10141c; --surface: #171d28; --ink: #e5e9f0; --muted: #98a2b4; --line: #2a3242;
+  --accent: #86a5f0; --accent-soft: #1f2a44; --tab: #1e2533;
+  --good: #5cc48f; --good-soft: #15301f; --warn: #e5b04f; --warn-soft: #33280f; --bad: #f08079; --bad-soft: #3a1a18; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #10141c; --surface: #171d28; --ink: #e5e9f0; --muted: #98a2b4; --line: #2a3242;
+  --accent: #86a5f0; --accent-soft: #1f2a44; --tab: #1e2533;
+  --good: #5cc48f; --good-soft: #15301f; --warn: #e5b04f; --warn-soft: #33280f; --bad: #f08079; --bad-soft: #3a1a18; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 22px; }
+h1, h2, h3 { font-family: var(--display); font-stretch: 85%; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; }
+h2 { font-size: 22px; font-weight: 700; }
+h3 { font-size: 16px; font-weight: 600; }
+.num, td.n, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; }
+header p { margin: 4px 0 0; color: var(--muted); max-width: 64ch; }
+.badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.controls label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); font-weight: 500; }
+.controls input { font: 500 15px var(--mono); padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); width: 100%; }
+input:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visible, a:focus-visible, tr:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.controls .hint { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+nav.tabs { display: flex; gap: 6px; border-bottom: 2px solid var(--accent); overflow-x: auto; padding: 6px 2px 0; }
+nav.tabs button { font: 600 14px var(--body); background: var(--tab); border: 1px solid var(--line); border-bottom: 0; color: var(--ink); padding: 10px 16px 9px; border-radius: 8px 8px 0 0; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; box-shadow: inset 0 -3px 4px -3px rgba(0,0,0,.12); transition: background .15s, transform .15s; }
+nav.tabs button svg { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; opacity: .8; }
+nav.tabs button:hover { background: var(--accent-soft); color: var(--accent); transform: translateY(-2px); }
+nav.tabs button[aria-selected="true"] { background: var(--accent); color: var(--surface); border-color: var(--accent); box-shadow: none; transform: none; }
+nav.tabs button[aria-selected="true"] svg { opacity: 1; }
+.tabhint { font-size: 12.5px; color: var(--muted); margin-bottom: -14px; }
+section.panel { display: grid; gap: 18px; }
+
+.verdict { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 10px; font-weight: 500; }
+.pill { font: 700 11.5px var(--body); text-transform: uppercase; letter-spacing: .06em; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.verdict .pill { color: var(--surface); }
+.lv-good { background: var(--good-soft); } .lv-good .pill { background: var(--good); }
+.lv-warn { background: var(--warn-soft); } .lv-warn .pill { background: var(--warn); }
+.lv-bad { background: var(--bad-soft); } .lv-bad .pill { background: var(--bad); }
+.st-good { background: var(--good-soft); color: var(--good); } .st-warn { background: var(--warn-soft); color: var(--warn); } .st-bad { background: var(--bad-soft); color: var(--bad); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 14px; min-width: 0; align-content: start; }
+.card > .head { display: grid; gap: 2px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.facts div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; align-content: start; }
+.facts .v { font: 500 20px var(--mono); font-variant-numeric: tabular-nums; }
+.facts .k { font-size: 12.5px; color: var(--muted); }
+
+.bars { display: grid; gap: 14px; }
+.bar { display: grid; gap: 5px; }
+.bar .top { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.bar .top b { font-weight: 600; }
+.track { position: relative; height: 22px; background: var(--bg); border-radius: 4px; }
+.fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--accent); transition: width .35s ease; }
+.fill.short { background: var(--bad); } .fill.ok { background: var(--good); }
+.req { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); }
+.bar small { color: var(--muted); font-size: 12.5px; }
+.legend { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+.legend i { width: 2px; height: 14px; background: var(--ink); display: inline-block; vertical-align: -2px; margin-right: 6px; }
+.mini { height: 8px; background: var(--bg); border-radius: 3px; position: relative; min-width: 70px; }
+.mini span { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--accent); }
+.mini span.ok { background: var(--good); }
+
+.stack { display: flex; height: 14px; border-radius: 4px; overflow: hidden; background: var(--bg); }
+.stack span { display: block; height: 100%; }
+.keys { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; }
+.keys span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; background: var(--c); vertical-align: -1px; }
+
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.n, th.n { text-align: right; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+tr.ruleRow { cursor: pointer; } tr.ruleRow:hover td { background: var(--accent-soft); }
+tr.ruleRow.on td { background: var(--accent-soft); font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font-size: 12px; padding: 2px 7px; border-radius: 4px; background: var(--bad-soft); color: var(--bad); white-space: nowrap; }
+.chip.w1 { background: var(--warn-soft); color: var(--warn); }
+.okchip { font-size: 12px; padding: 2px 7px; border-radius: 4px; background: var(--good-soft); color: var(--good); }
+.sub { color: var(--muted); font-size: 12.5px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+select, .linkbtn { font: 500 14px var(--body); padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.linkbtn { cursor: pointer; }
+.step { font-size: 13.5px; margin-top: 6px; max-width: 52ch; }
+.step b { font-weight: 600; }
+details { margin-top: 4px; font-size: 13px; }
+details summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+details ol { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 6px; max-width: 56ch; }
+.pri { font: 600 11px var(--body); text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 4px; margin-right: 6px; white-space: nowrap; }
+.pri-High { background: var(--bad-soft); color: var(--bad); } .pri-Medium { background: var(--warn-soft); color: var(--warn); } .pri-Low { background: var(--bg); color: var(--muted); }
+.health { display: inline-block; min-width: 34px; text-align: right; }
+
+/* Metrics */
+.jump { display: flex; flex-wrap: wrap; gap: 6px; }
+.jump a { font-size: 13px; font-weight: 500; color: var(--accent); text-decoration: none; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.jump a:hover { background: var(--accent-soft); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; min-width: 0; }
+.kpi .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.kpi .k { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+.kpi .v { font: 500 22px var(--mono); font-variant-numeric: tabular-nums; }
+.kpi .d { font-size: 12px; color: var(--muted); }
+.kpi svg { width: 100%; height: 30px; display: block; }
+.mgroup { display: grid; gap: 18px; scroll-margin-top: 16px; }
+.mgroup > h2 { padding-top: 6px; border-top: 1px solid var(--line); padding-block-start: 18px; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart text { font: 11.5px var(--body); fill: var(--muted); }
+.formula { font: 500 14px var(--mono); background: var(--bg); border-radius: 6px; padding: 10px 12px; overflow-x: auto; white-space: nowrap; }
+.levers { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.levers div { display: grid; gap: 2px; }
+.levers .v { font: 500 17px var(--mono); }
+.levers .k { font-size: 12px; color: var(--muted); }
+.heat td { text-align: center; font: 500 12.5px var(--mono); padding: 6px 4px; min-width: 44px; border-bottom: 2px solid var(--surface); }
+.heat td.lbl, .heat th.lbl { text-align: left; font-family: var(--body); white-space: nowrap; }
+.mp { display: inline-grid; place-items: center; width: 28px; height: 24px; border-radius: 4px; font: 600 12px var(--mono); }
+.mp-0 { background: var(--bad-soft); color: var(--bad); } .mp-1 { background: var(--warn-soft); color: var(--warn); } .mp-2 { background: var(--good-soft); color: var(--good); }
+.mp.gap { box-shadow: inset 0 0 0 2px var(--bad); }
+.req-cell { font: 500 12px var(--mono); color: var(--muted); }
+
+/* Method */
+.prose { max-width: 74ch; display: grid; gap: 10px; }
+.prose p { margin: 0; }
+dl.defs { display: grid; gap: 12px; margin: 0; }
+dl.defs dt { font-weight: 600; }
+dl.defs dd { margin: 2px 0 0; color: var(--muted); }
+dl.defs code { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+.defgroup { font: 600 12px var(--body); text-transform: uppercase; letter-spacing: .08em; color: var(--accent); margin-top: 8px; }
+.convo { display: grid; gap: 10px; max-width: 78ch; }
+.line { display: grid; grid-template-columns: 92px 1fr; gap: 10px; }
+.who { font: 600 12px var(--body); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding-top: 2px; }
+.who.pm { color: var(--accent); } .who.prof { color: var(--good); } .who.qa { color: var(--warn); }
+.line p { margin: 0; }
+.round { font: 600 12px var(--body); color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+.qa ul { list-style: none; margin: 0; padding: 0; columns: 2 320px; column-gap: 24px; }
+.qa li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; border-bottom: 1px dashed var(--line); font-size: 13.5px; break-inside: avoid; }
+.qa .ok { color: var(--good); font: 600 12px var(--mono); }
+footer { color: var(--muted); font-size: 12.5px; }
+@media (max-width: 520px) { .line { grid-template-columns: 1fr; gap: 2px; } }
+@media (prefers-reduced-motion: reduce) { .fill, nav.tabs button { transition: none; } nav.tabs button:hover { transform: none; } html { scroll-behavior: auto; } }
+
+/* ---- Summary ---- */
+.weak { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.weak li { display: flex; gap: 10px; align-items: baseline; font-size: 14px; }
+.support { display: grid; gap: 12px; }
+.support:empty { display: none; }
+.support .box { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; background: var(--bg); }
+.sbcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 24px; }
+.support ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+.conf { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.conf .big { font: 600 40px var(--mono); line-height: 1; }
+.conf .of { color: var(--muted); font: 500 16px var(--mono); }
+.mini.thick { height: 12px; flex: 1; min-width: 160px; }
+.mini .mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+.land svg { width: 100%; height: auto; display: block; }
+.land svg text { font: 12.5px var(--body); }
+.facts .note { font-size: 12px; color: var(--muted); }
+.scope { font-size: 13.5px; padding: 10px 14px; border-radius: 10px; background: var(--accent-soft); }
+tr.avg td { border-top: 2px solid var(--line); }
+
+/* ---- Frozen first column: the row's name stays visible when scrolling sideways ---- */
+.tablewrap { position: relative; }
+.tablewrap tr > :first-child { position: sticky; left: 0; z-index: 2; background: var(--surface); box-shadow: inset -1px 0 0 var(--line); max-width: min(240px, 45vw); }
+.tablewrap thead tr > :first-child { background: var(--bg); z-index: 3; }
+.tablewrap tbody tr:hover > :first-child { background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface)); }
+.tablewrap tr.ruleRow.on > :first-child, .tablewrap tr.ruleRow:hover > :first-child { background: var(--accent-soft); }
+.heat.tablewrap tbody tr:hover > :first-child, .tablewrap .heat tbody tr:hover > :first-child { background: var(--surface); }
+
+/* ---- v8 ---- */
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: 600 14px var(--body); padding: 8px 16px; border-radius: 6px; border: 1px solid var(--accent); background: var(--accent); color: var(--surface); cursor: pointer; }
+.btn:hover { filter: brightness(1.08); }
+.filebtn { position: relative; overflow: hidden; display: inline-flex; align-items: center; }
+.filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.filebtn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+textarea { width: 100%; font: 12.5px/1.5 var(--mono); padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); resize: vertical; }
+.notice-sm { padding: 10px 14px; border-radius: 8px; background: var(--good-soft); margin: 0; }
+tr.picked > td { background: var(--accent-soft); }
+.tablewrap tr.picked > :first-child { background: var(--accent-soft); }
+#scDeals select { font: 500 13px var(--body); padding: 4px 6px; }
+
+/* ---- Start here ---- */
+.start-intro h2 { font-size: clamp(22px, 3.4vw, 30px); }
+.start-intro p { margin: 0; max-width: 78ch; font-size: 15.5px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+.why p { margin: 0; color: var(--muted); }
+.num-badge { width: 30px; height: 30px; border-radius: 999px; display: grid; place-items: center; font: 600 14px var(--mono); background: var(--accent-soft); color: var(--accent); }
+.qgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+.qgrid a { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; text-decoration: none; color: var(--ink); background: var(--surface); transition: border-color .15s, background .15s; }
+.qgrid a:hover { border-color: var(--accent); background: var(--accent-soft); }
+.qgrid a span { font-size: 12.5px; color: var(--accent); font-weight: 600; }
+.qgrid a b { font-weight: 500; }
+.steps { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-size: 14.5px; }
+.golink { font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap; }
+.golink:hover { text-decoration: underline; }
+details.fold > summary { font: 600 15px var(--body); color: var(--ink); padding: 4px 0; }
+details.fold[open] > summary { margin-bottom: 10px; }
+
+/* ---- Status reasons ---- */
+.skey { margin: 0; font-size: 12.5px; color: var(--muted); padding: 8px 12px; border-radius: 8px; background: var(--bg); }
+.kpi .why { font-size: 12px; padding-top: 6px; border-top: 1px dashed var(--line); color: var(--muted); }
+.kpi .why.w-warn { color: var(--warn); } .kpi .why.w-bad { color: var(--bad); }
+.st-info { background: var(--accent-soft); color: var(--accent); }
+.byline { margin: 0; font: 600 13px var(--body); letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
+
+/* ---- Commission views ---- */
+.viewbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding: 12px 16px; border-radius: 12px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+.viewbar label { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; }
+.viewbar select { font: 600 14px var(--body); padding: 6px 10px; border: 1px solid var(--accent); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.viewbar p { margin: 0; font-size: 13.5px; flex: 1; min-width: 240px; }
+.pickrep { display: inline-flex; align-items: center; gap: 8px; font: 600 13px var(--body); color: var(--muted); }
+.pickrep select { font: 600 14px var(--body); padding: 6px 10px; border: 1px solid var(--accent); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.linkbtn.small { font-size: 12.5px; padding: 4px 9px; white-space: nowrap; color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+#repTable tr.picked .linkbtn.small { background: var(--accent); color: var(--surface); }
+
+/* ---- Final alignment fixes ---- */
+.hero { justify-content: stretch; }
+.kpi { align-content: start; }
+.kpi .why { margin-top: auto; }
+.hero-top { width: 100%; }
+.controls { align-items: start; }
+.controls label { align-content: start; grid-template-rows: auto 40px auto; }
+.controls input, .controls select { height: 40px; box-sizing: border-box; }
+.viewbar label { flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.viewbar select { max-width: 100%; min-width: 0; }
+
+/* ---- Decisions and tour ---- */
+.dlist { margin: 0; padding-left: 22px; display: grid; gap: 10px; font-size: 14.5px; columns: 2 380px; column-gap: 32px; }
+.dlist li { break-inside: avoid; margin-bottom: 10px; }
+.tourlink { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.tour { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: min(560px, calc(100% - 32px)); background: var(--surface); border: 1px solid var(--accent); border-radius: 14px; padding: 16px 18px; box-shadow: 0 10px 30px rgba(16,24,40,.25); display: grid; gap: 8px; }
+.tour h3 { font-size: 18px; }
+.tour p { margin: 0; font-size: 14.5px; }
+.tour-top { display: flex; justify-content: space-between; align-items: center; }
+.tour-step { font: 600 12px var(--mono); color: var(--accent); }
+.tour-x { border: 0; background: none; font-size: 22px; line-height: 1; color: var(--muted); cursor: pointer; padding: 2px 6px; }
+.tour-nav { display: flex; justify-content: flex-end; gap: 8px; }
+.tour-nav button:disabled { opacity: .4; cursor: default; }
+.tour-hl { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: 12px; scroll-margin: 120px 0 240px; }
+
+/* ---- Polish layer ---- */
+:root { --hero: #15213b; --hero-ink: #ffffff; --hero-muted: #b8c3dc; --shadow: 0 1px 2px rgba(16,24,40,.05), 0 2px 6px rgba(16,24,40,.05); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hero: #1a2645; --hero-ink: #eef2fa; --hero-muted: #a7b3cf; --shadow: none; } }
+:root[data-theme="dark"] { --hero: #1a2645; --hero-ink: #eef2fa; --hero-muted: #a7b3cf; --shadow: none; }
+.wrap { gap: 20px; }
+.hero { display: grid; gap: 10px; background: var(--hero); color: var(--hero-ink); border-radius: 14px; padding: 22px 24px 24px; }
+.hero h1 { color: var(--hero-ink); }
+.hero p { color: var(--hero-muted); margin: 0; max-width: 68ch; }
+.hero-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+.brand { display: inline-flex; align-items: center; gap: 8px; font: 600 13px var(--body); letter-spacing: .04em; text-transform: uppercase; color: var(--hero-muted); }
+.brand svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+.hero-meta { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: var(--hero-muted); }
+.qchip { font: 600 12px var(--mono); padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,.12); color: var(--hero-ink); }
+.notice { display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border-radius: 10px; background: var(--warn-soft); border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); }
+.notice svg { width: 18px; height: 18px; flex: none; margin-top: 2px; stroke: var(--warn); fill: none; stroke-width: 2; stroke-linecap: round; }
+.notice p { margin: 0; font-size: 13.5px; }
+.notice b { color: var(--warn); }
+.controls { border-radius: 12px; box-shadow: var(--shadow); padding: 16px 18px; }
+.ctrl-title { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.card, .kpi { border-radius: 12px; box-shadow: var(--shadow); }
+.card { padding: 20px; }
+.card > .head, .card > .toolbar:first-child { padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.facts { border-radius: 12px; box-shadow: var(--shadow); }
+.facts div { padding: 14px 16px; gap: 4px; }
+.facts .k { order: -1; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.facts .v { font-size: 22px; }
+th { background: var(--bg); }
+thead th:first-child { border-top-left-radius: 6px; } thead th:last-child { border-top-right-radius: 6px; }
+tbody tr:hover td { background: color-mix(in srgb, var(--accent-soft) 55%, transparent); }
+.heat tbody tr:hover td { background: inherit; }
+.verdict { border-radius: 12px; padding: 16px 18px; font-size: 15.5px; }
+.mgroup > h2 { border-top: 0; padding-top: 8px; display: flex; align-items: center; gap: 10px; }
+.mgroup > h2::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.kpi { padding: 14px 16px; }
+footer { display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 14px; }
+footer p { margin: 0; }
+@media (max-width: 520px) { .hero { padding: 18px; } .card { padding: 16px; } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="hero-top">
+      <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18"/><path d="M6 16v-5M11 16V7M16 16v-8M20 16V4"/></svg><span>RevOps Demo</span></div>
+      <div class="hero-meta"><span class="qchip">Q4 FY26</span><span>As of 4 Nov 2026</span></div>
+    </div>
+    <h1>Pipeline Health Check</h1>
+    <p>A quarter-end view for sales leadership: where we'll land, what to fix in the pipeline, what reps stand to earn, where pipeline comes from, and two years of revenue metrics for context.</p>
+  </header>
+  <div class="notice" role="note">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 12h1v5h1"/></svg>
+    <p><b>Fictitious data for demonstration only.</b> Every company, person, deal and figure on this page is invented. Any resemblance to real organisations, people or results is purely coincidental. Nothing here is financial advice.</p>
+  </div>
+
+  <div class="controls" role="group" aria-label="Assumptions">
+    <div class="ctrl-title"><h3>Assumptions</h3><span class="sub">Change any of these and every tab updates</span></div>
+    <label for="quota">Quarter quota (£)<input id="quota" type="number" min="0" step="50000" value="2200000"><span class="hint">Split across 9 reps in 3 teams</span></label>
+    <label for="won">Closed won so far (£)<input id="won" type="number" min="0" step="10000" value="1150000"><span class="hint" id="wonHint"></span></label>
+    <label for="wr">Win rate (%)<input id="wr" type="number" min="1" max="100" step="1" value="33"><span class="hint" id="wrHint">Sets the coverage you need</span></label>
+    <label for="stale">Stale after (days)<input id="stale" type="number" min="1" max="90" step="1" value="14"><span class="hint">No logged activity</span></label>
+  </div>
+
+  <div class="tabhint">Click a tab to switch view, or <button type="button" class="tourlink" data-tour-start>take the two-minute tour</button></div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="t-start" aria-selected="true" data-tab="start"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z"/></svg>Start here</button>
+    <button role="tab" id="t-method" aria-selected="false" data-tab="method"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>How it works</button>
+    <button role="tab" id="t-summary" aria-selected="false" data-tab="summary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6M10 9h2"/></svg>Executive summary</button>
+    <button role="tab" id="t-coverage" aria-selected="false" data-tab="coverage"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18"/><path d="M6 16v-5M11 16V7M16 16v-8M20 16V4"/></svg>Forecast coverage</button>
+    <button role="tab" id="t-hygiene" aria-selected="false" data-tab="hygiene"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>Hygiene and next steps</button>
+    <button role="tab" id="t-commission" aria-selected="false" data-tab="commission"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.5 8.5a3 3 0 0 0-5 1c0 3 5 2 5 5a3 3 0 0 1-5 1M12 6v2M12 16v2"/></svg>Commission</button>
+    <button role="tab" id="t-activity" aria-selected="false" data-tab="activity"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Activity</button>
+    <button role="tab" id="t-marketing" aria-selected="false" data-tab="marketing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/></svg>Marketing</button>
+    <button role="tab" id="t-renewals" aria-selected="false" data-tab="renewals"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>Renewals</button>
+    <button role="tab" id="t-metrics" aria-selected="false" data-tab="metrics"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/></svg>Revenue metrics</button>
+    <button role="tab" id="t-planning" aria-selected="false" data-tab="planning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Planning</button>
+    <button role="tab" id="t-data" aria-selected="false" data-tab="data"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>Your data</button>
+  </nav>
+
+  <!-- COVERAGE -->
+  <!-- SUMMARY -->
+  <section class="panel" id="p-start" role="tabpanel" aria-labelledby="t-start">
+    <div class="card start-intro">
+      <div class="eyebrow">Start here</div>
+      <h2>A revenue operations command view, built end to end with AI</h2>
+      <p class="byline">Built by John Webb</p>
+      <p>This is a working demonstration of how a B2B SaaS sales organisation can see the whole quarter in one place: where it will land, how much to trust that, which deals, reps and managers need attention, and what to do next. Every number is calculated live by a tested engine, and every recommendation comes from the figures, not from hand-written commentary.</p>
+      <div class="notice" role="note" style="margin-top:4px"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 12h1v5h1"/></svg><p><b>None of this is real.</b> The company, its customers, reps, managers, SDRs, competitors, deals and every figure were invented for this demo. Any resemblance to real organisations, people or results is purely coincidental.</p></div>
+      <div class="btnrow"><button type="button" class="btn" data-tour-start>Take the two-minute tour</button><span class="sub">It walks through each tab and explains why it's there.</span></div>
+    </div>
+
+    <div class="grid3">
+      <div class="card why"><div class="num-badge">1</div><h3>Clarity on what matters</h3><p>Revenue leaders ask the same questions in the same order: will we land, can we trust the pipeline, where are the weak spots, and what do we do about them. The demo is organised around those questions, with every formula defined and every assumption labelled.</p></div>
+      <div class="card why"><div class="num-badge">2</div><h3>AI that builds the whole system</h3><p>The data model, calculation engine, automated tests, reviews and interface were all built with an AI model, directed by a RevOps practitioner. That's the point: AI can produce a joined-up system that holds the full picture, not just a single report.</p></div>
+      <div class="card why"><div class="num-badge">3</div><h3>Judgement, not just numbers</h3><p>The engine spots issues, estimates where the quarter and year will land, scores how far to trust that, and ranks where to focus: which deals, which reps, which managers need help, and why.</p></div>
+    </div>
+
+    <div class="card decided">
+      <div class="head"><h3>What I decided, and why</h3><div class="sub">John Webb</div></div>
+      <ol class="dlist">
+        <li><b>Answer first, evidence second.</b> The first screen tells a revenue leader where we'll land, how far to trust it and what to decide this week. Every other tab is the evidence behind that.</li>
+        <li><b>Coverage against what's left, at our own win rate.</b> Coverage against full quota flatters a late quarter. I measure it against quota still to find, and set the target from our own win rate rather than a blanket 3x.</li>
+        <li><b>Show the pipeline with and without its problems.</b> Raw coverage beside clean coverage puts the case for pipeline hygiene in one number.</li>
+        <li><b>No red flag without a next step.</b> A flag on its own is noise. Every issue comes with the action that fixes it, ranked by what it's worth.</li>
+        <li><b>Calibrate before you forecast.</b> Forecast categories are checked against history. Commit has closed at 80% here, not the 85% people assume, so that's the rate the forecast uses.</li>
+        <li><b>Judge people against their tenure.</b> A rep six months in at 66% is doing fine; one three years in at 71% isn't. Managers get flagged on facts, and told why.</li>
+        <li><b>Commission is seen only by those entitled to it.</b> Executives see every team; a team lead sees only their own. It appears nowhere else on the page.</li>
+        <li><b>Nothing goes red without a reason.</b> Every status says what triggered it, and every threshold is written under its table.</li>
+        <li><b>Safe to share.</b> All the data is invented, competitors are anonymised, nothing comes from any employer, and it was checked for legal risk before publishing.</li>
+        <li><b>AI builds; people decide.</b> AI wrote the code and played the reviewer roles. I decided what to measure, what good looks like, who sees what, and what goes in front of an executive.</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="head"><h3>What it found this quarter</h3><div class="sub">Generated from the fictitious data the moment the page loads</div></div>
+      <ul class="weak" id="startFindings"></ul>
+    </div>
+
+    <div class="card">
+      <div class="head"><h3>Questions it answers</h3><div class="sub">Select a question to go to its tab</div></div>
+      <div class="qgrid">
+        <a href="#method"><b>How does it work, and who sees what?</b><span>How it works</span></a>
+        <a href="#summary"><b>Where will we land, and what do we need to decide?</b><span>Executive summary</span></a>
+        <a href="#coverage"><b>Is there enough pipeline to hit the number?</b><span>Forecast coverage</span></a>
+        <a href="#hygiene"><b>Which deals need attention, and what's the next step?</b><span>Hygiene and next steps</span></a>
+        <a href="#commission"><b>What will each rep earn?</b><span>Commission</span></a>
+        <a href="#activity"><b>Are reps and SDRs doing the work?</b><span>Activity</span></a>
+        <a href="#marketing"><b>Is marketing feeding the pipeline, and which channels pay?</b><span>Marketing</span></a>
+        <a href="#renewals"><b>Which customers might not renew?</b><span>Renewals</span></a>
+        <a href="#metrics"><b>How are retention, efficiency and win rates trending?</b><span>Revenue metrics</span></a>
+        <a href="#planning"><b>What if deals slip, and can we hit next year?</b><span>Planning</span></a>
+        <a href="#data"><b>Would this work on our own pipeline?</b><span>Your data</span></a>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="head"><h3>How I built it</h3></div>
+        <ol class="steps">
+          <li><b>Define.</b> I set out what each measure means and the order a leader should read them in, before anything was built.</li>
+          <li><b>Build.</b> I had the AI write a calculation engine of plain, testable functions, fed by invented data that comes out the same every time.</li>
+          <li><b>Test.</b> <span id="startTests"></span> automated tests: worked examples, edge cases, and checks that every total agrees across tabs.</li>
+          <li><b>Review.</b> I had the work reviewed for method, wording and legal risk, and fixed what came back. The full process is under How it works.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <div class="head"><h3>How to use it</h3></div>
+        <ul class="steps">
+          <li>The <b>assumptions</b> at the top (quota, closed won, win rate, stale days) drive every tab. Change one and everything recalculates.</li>
+          <li>Green, amber and red mean the same everywhere: <span class="pill st-good">Good</span> <span class="pill st-warn">Watch</span> <span class="pill st-bad">Act</span>. The words change to suit the measure (On track, Healthy, Ahead), and a line under each table says exactly where the thresholds sit.</li>
+          <li>Wide tables keep their first column pinned as you scroll sideways.</li>
+          <li><b>Your data</b> runs the same checks on a CSV export from your CRM, privately in the browser.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-summary" role="tabpanel" aria-labelledby="t-summary" hidden>
+    <div class="verdict" id="sumVerdict"></div>
+    <div class="facts" id="sumFacts"></div>
+    <div class="card">
+      <div class="head"><h3>Decisions needed this week</h3><div class="sub">What leadership should act on, generated from the figures on every tab</div></div>
+      <div class="tablewrap"><table id="decTable"></table></div>
+        <p class="skey">Act: red-flag items that move the forecast or a customer this month. Watch: amber items to settle before they become red.</p>
+    </div>
+    <div class="grid2">
+      <div class="card land">
+        <div class="head"><h3>Where we're likely to land</h3><div class="sub">Closed won plus the open pipeline, read three ways</div></div>
+        <div id="landChart"></div>
+        <div class="tablewrap"><table id="landTable"></table></div>
+        <p class="skey">Status uses the likely landing: 100% of quota or more is on track, 90–99% is just short, below 90% is off track.</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>Confidence in the pipeline</h3><div class="sub">How much of the forecast is backed by clean data and buyer evidence</div></div>
+        <div id="confBox"></div>
+        <div class="tablewrap"><table id="confTable"></table></div>
+        <p class="skey">High is 75 or more, Medium 55–74, Low below 55. Each row shows how many of its points it earned.</p>
+      </div>
+    </div>
+    <div class="card chart">
+      <div class="head"><h3>FY26 full year</h3><div class="sub">Q1 to Q3 actual bookings against quota, Q4 closed so far and its likely landing. Quarterly quotas step up into Q4, as many plans do</div></div>
+      <div class="facts" id="fyFacts"></div>
+      <div id="fyChart"></div>
+      <div class="legend"><span class="keys"><span style="--c:var(--accent)">Booked</span><span style="--c:color-mix(in srgb, var(--accent) 35%, var(--surface))">Q4 likely still to close</span></span><span><i></i>Quota</span></div>
+      <div class="tablewrap"><table id="fyTable"></table></div>
+      <p style="margin:0" id="fyText"></p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="head"><h3>Where we're weak</h3><div class="sub">Generated from the figures on every tab</div></div>
+        <ul class="weak" id="weakList"></ul>
+      </div>
+      <div class="card">
+        <div class="head"><h3>Focus this week</h3><div class="sub">Highest-value actions from the next-steps list</div></div>
+        <div class="tablewrap"><table id="focusTable"></table></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="head"><h3>Teams and managers</h3><div class="sub">Each team measured against its own share of quota</div></div>
+      <div class="tablewrap"><table id="teamTable"></table></div>
+        <p class="skey">A team is flagged for: likely landing under 90% of quota; clean coverage under what's needed; fewer than 60% of deals clean; two or more reps behind for tenure. One or two flags is Watch, three or more is Needs support.</p>
+      <div class="support" id="supportBox"></div>
+    </div>
+    <div class="card">
+      <div class="head"><h3>Reps and tenure</h3><div class="sub">Trailing twelve-month attainment against what we'd expect at each rep's tenure. Expectation rises from 40% at hire to 100% at 12 months; ramp is the first 9 months</div></div>
+      <div class="tablewrap"><table id="tenureTable"></table></div>
+        <p class="skey">Ahead: 110% or more of what's expected at that tenure. In line: 90–110%. Behind: under 90%. The black tick on each bar marks the expectation.</p>
+    </div>
+    <div class="card chart">
+      <div class="head"><h3>Where we're heading</h3><div class="sub">ARR, last eight quarters and four projected on the current trend</div></div>
+      <div id="sumProj"></div>
+      <p style="margin:0" id="sumProjText"></p>
+    </div>
+  </section>
+
+  <section class="panel" id="p-coverage" role="tabpanel" aria-labelledby="t-coverage" hidden>
+    <div class="verdict" id="verdict"></div>
+    <div class="facts" id="covFacts"></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="head"><h3>Coverage, three ways</h3><div class="sub">Pipeline closing this quarter ÷ quota still to find</div></div>
+        <div class="bars" id="bars"></div>
+        <div class="legend"><span><i></i>Coverage needed at your win rate</span></div>
+      </div>
+      <div class="card">
+        <div class="head"><h3>In-quarter pipeline by forecast category</h3><div class="sub" id="catSub"></div></div>
+        <div class="stack" id="catStack"></div>
+        <div class="keys" id="catKeys"></div>
+        <div class="tablewrap"><table id="catTable"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HYGIENE -->
+  <section class="panel" id="p-hygiene" role="tabpanel" aria-labelledby="t-hygiene" hidden>
+    <div class="facts" id="hygFacts"></div>
+    <div class="card">
+      <div class="head"><h3>Do these first</h3><div class="sub">Every recommended action across the pipeline, ranked by priority × deal value</div></div>
+      <div class="tablewrap"><table id="actionTable"></table></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="head"><h3>Issues by rule</h3><div class="sub">Select a row to filter the deal list</div></div>
+        <div class="tablewrap"><table id="ruleTable"></table></div>
+      </div>
+      <div class="card">
+        <div class="head"><h3>By owner</h3><div class="sub">Share of each rep's deals with at least one issue</div></div>
+        <div class="tablewrap"><table id="ownerTable"></table></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <h3 id="dealHead">All open deals</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select id="ownerFilter" aria-label="Filter by owner"></select>
+          <button class="linkbtn" id="clearFilter" type="button" hidden>Clear rule filter</button>
+        </div>
+      </div>
+      <div class="tablewrap"><table id="dealTable"></table></div>
+        <p class="skey">Health = 100 minus points for each issue (a weight-3 issue costs about 21 points, weight 2 about 14, weight 1 about 7). Green 80+, amber 60–79, red below 60. The small figures under each score show what was taken off.</p>
+    </div>
+  </section>
+
+  <!-- COMMISSION -->
+  <section class="panel" id="p-commission" role="tabpanel" aria-labelledby="t-commission" hidden>
+    <div class="viewbar">
+      <label for="viewAs"><b>Viewing as</b>
+        <select id="viewAs">
+          <option value="">Executive (all teams)</option>
+        </select>
+      </label>
+      <p id="viewNote"></p>
+    </div>
+    <div class="facts" id="comFacts"></div>
+    <div class="card">
+      <div class="head"><h3>By team and manager</h3><div class="sub">Rep commission plus each manager's override on their team's bookings</div></div>
+      <div class="tablewrap"><table id="teamComTable"></table></div>
+      <p class="skey">Cost of sales = commission earned (reps plus manager override) ÷ closed won. It's the same for every team until someone passes quota and accelerators start to apply. Attainment: green at 100% or more.</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="head"><h3>By rep</h3><div class="sub">Quota attainment this quarter and what the open pipeline is worth to each rep. Select a rep to review their deals</div></div>
+        <div class="tablewrap"><table id="repTable"></table></div>
+      </div>
+      <div class="card">
+        <div class="head"><h3>Commission plan</h3><div class="sub">Illustrative plan for the demo</div></div>
+        <div class="tablewrap"><table id="planTable"></table></div>
+        <p class="sub" style="margin:0">The slice of a deal that lands above 100% of quota pays at the accelerated rate. A deal that straddles quota is split: part at base, part accelerated. Closed business to date is paid at a blended <span class="mono">9%</span>. Managers earn a <span class="mono">2%</span> override on everything their team closes.</p>
+      </div>
+    </div>
+    <div class="card" id="repDealCard">
+      <div class="toolbar">
+        <div class="head" style="border:0;padding:0"><h3>Review a rep's deals</h3><div class="sub" id="repDealHead"></div></div>
+        <label for="repPick" class="pickrep">Rep to review <select id="repPick"></select></label>
+      </div>
+      <div class="tablewrap"><table id="repDealTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ACTIVITY -->
+  <section class="panel" id="p-activity" role="tabpanel" aria-labelledby="t-activity" hidden>
+    <div class="scope"><b>Window:</b> the last 30 days of logged calls, emails and meetings.</div>
+    <div class="facts" id="actFacts"></div>
+    <div class="card chart">
+      <div class="head"><h3>Meetings and attainment</h3><div class="sub">Each dot is an account executive: meetings a week (last 30 days) against trailing twelve-month attainment</div></div>
+      <div id="actScatter"></div>
+      <div class="legend"><span class="keys"><span style="--c:var(--accent)">Enterprise</span><span style="--c:var(--good)">Mid-Market</span><span style="--c:var(--warn)">Growth</span></span></div>
+      <p style="margin:0" id="actInsight"></p>
+    </div>
+    <div class="card">
+      <div class="head"><h3>Account executives</h3><div class="sub">Meetings, calls and emails logged in the last 30 days</div></div>
+      <div class="tablewrap"><table id="actReps"></table></div>
+        <p class="skey">Meetings a week: Good at 4.5 or more (about one a day), Watch from 3.5, Act below. These are demo thresholds, not an industry standard.</p>
+    </div>
+    <div class="card">
+      <div class="head"><h3>SDRs</h3><div class="sub">Connect rate = live conversations ÷ calls. Show rate = meetings held ÷ booked</div></div>
+      <div class="tablewrap"><table id="actSdrs"></table></div>
+        <p class="skey">Connect rate: Good at 8% or more, Watch from 5%. Show rate: Good at 75% or more, Watch from 65%.</p>
+    </div>
+  </section>
+
+  <!-- MARKETING -->
+  <section class="panel" id="p-marketing" role="tabpanel" aria-labelledby="t-marketing" hidden>
+    <div class="scope" id="mkScope"></div>
+    <div class="facts" id="mkFacts"></div>
+    <div class="grid2">
+      <div class="card">
+        <div class="head"><h3>Lead funnel</h3><div class="sub">From marketing qualified lead to closed won</div></div>
+        <div class="tablewrap"><table id="mkFunnel"></table></div>
+        <p class="sub" style="margin:0" id="mkFunnelNote"></p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>Where marketing pipeline stands</h3><div class="sub">Every opportunity that started as an MQL, by value</div></div>
+        <div id="mkStack"></div>
+        <div class="keys" id="mkKeys"></div>
+        <div class="tablewrap"><table id="mkOutcomes"></table></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="head"><h3>By sales team</h3><div class="sub">Leads are routed to the team that covers the account's segment</div></div>
+      <div class="tablewrap"><table id="mkTeams"></table></div>
+        <p class="skey">MQL to SQL: Good at 28% or more, Watch from 22%, Act below. First touch: Good within 12 hours, Watch to 24, Act beyond.</p>
+    </div>
+    <div class="card">
+      <div class="head"><h3>By SDR</h3><div class="sub">Inbound MQLs each SDR worked, plus outbound opportunities they created themselves</div></div>
+      <div class="tablewrap"><table id="mkSdrs"></table></div>
+        <p class="skey">First touch: Good within 12 hours, Watch to 24, Act beyond. Unworked 2d+ counts new leads nobody has touched for over two days.</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="head"><h3>Dumped: disqualified leads</h3><div class="sub">Closed out by the SDR and not coming back</div></div>
+        <div class="tablewrap"><table id="mkDq"></table></div>
+      </div>
+      <div class="card">
+        <div class="head"><h3>Recirculated: recycled to nurture</h3><div class="sub">Not ready now; back into marketing programmes to re-qualify later</div></div>
+        <div class="tablewrap"><table id="mkRec"></table></div>
+        <p class="sub" style="margin:0" id="mkOpen"></p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="head"><h3>By channel</h3><div class="sub">Spend since 1 July is illustrative. Pipeline counts every opportunity the channel's MQLs created</div></div>
+      <div class="tablewrap"><table id="mkChannels"></table></div>
+        <p class="skey">Pipeline per £1: Good at £20 or more, Watch from £10, Act below.</p>
+    </div>
+    <div class="card">
+      <div class="head"><h3>Multi-touch attribution</h3><div class="sub" id="atSub"></div></div>
+      <div class="tablewrap"><table id="atTable"></table></div>
+      <p style="margin:0" id="atText"></p>
+    </div>
+    <div class="card">
+      <div class="head"><h3>Open pipeline by source</h3><div class="sub">Every open deal, whoever created it. Single-touch: each deal is credited to one source only</div></div>
+      <div class="tablewrap"><table id="mkSource"></table></div>
+    </div>
+  </section>
+
+  <!-- RENEWALS -->
+  <section class="panel" id="p-renewals" role="tabpanel" aria-labelledby="t-renewals" hidden>
+    <div class="scope"><b>Window:</b> every contract renewing in the next six months, to early May 2027.</div>
+    <div class="facts" id="rnFacts"></div>
+    <div class="card">
+      <div class="head"><h3>Renewal book by health</h3><div class="sub">Health starts at 100 and loses points for each warning sign</div></div>
+      <div id="rnStack"></div>
+      <div class="keys" id="rnKeys"></div>
+      <p class="sub" style="margin:0">Expected renewal rates by band (Healthy 97%, At risk 80%, Critical 50%) are assumptions; calibrate them against past renewals with real data.</p>
+    </div>
+    <div class="card">
+      <div class="head"><h3>Accounts renewing</h3><div class="sub">Riskiest first, then by renewal date</div></div>
+      <div class="tablewrap"><table id="rnTable"></table></div>
+        <p class="skey">Health starts at 100; each warning sign takes off the points shown. Healthy 70+, At risk 45–69, Critical below 45.</p>
+    </div>
+  </section>
+
+  <!-- METRICS -->
+  <section class="panel" id="p-metrics" role="tabpanel" aria-labelledby="t-metrics" hidden>
+    <div class="toolbar">
+      <div class="sub">Quarterly history Q1 FY24 to Q3 FY26; trailing twelve months (TTM) unless stated. Status uses common SaaS rules of thumb.</div>
+    </div>
+    <nav class="jump" aria-label="Metric sections">
+      <a href="#m-projection">Projection</a><a href="#m-retention">Retention</a><a href="#m-pipeline">Pipeline</a><a href="#m-forecasting">Forecasting</a><a href="#m-winloss">Win/loss</a><a href="#m-efficiency">Efficiency</a><a href="#m-dealdesk">Deal desk</a><a href="#m-meddpicc">MEDDPICC</a>
+    </nav>
+    <div class="kpis" id="kpis"></div>
+
+    <div class="mgroup" id="m-projection">
+      <div class="card chart">
+        <div class="toolbar">
+          <div class="head"><h3>Trend and projection</h3><div class="sub" id="projSub"></div></div>
+          <select id="projPick" aria-label="Metric to project"></select>
+        </div>
+        <div id="projChart"></div>
+        <div class="legend" id="projLegend"></div>
+        <p style="margin:0" id="projText"></p>
+      </div>
+    </div>
+
+    <div class="mgroup" id="m-retention">
+      <h2>Retention and expansion</h2>
+      <div class="card">
+        <div class="head"><h3>ARR bridge, GRR and NRR</h3><div class="sub">GRR and NRR are TTM against ARR four quarters earlier</div></div>
+        <div class="tablewrap"><table id="bridgeTable"></table></div>
+        <p class="skey">GRR: Good at 90% or more, Watch from 85%, Act below. NRR: Good at 110% or more, Watch from 100%, Act below.</p>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="head"><h3>Expansion velocity</h3><div class="sub">How fast the installed base is growing on its own</div></div>
+          <div class="levers" id="expLevers"></div>
+          <div id="expChart" class="chart"></div>
+        </div>
+        <div class="card">
+          <div class="head"><h3>Renewal forecast accuracy</h3><div class="sub">Renewal ARR called at quarter start vs what renewed</div></div>
+          <div class="tablewrap"><table id="renewTable"></table></div>
+        <p class="skey">Good at 97% accuracy or more, Watch from 93%, Act below.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="head"><h3>Churn cohorts</h3><div class="sub">What share of the customers signed in each quarter are still with us</div></div>
+        <div class="facts" id="cohortFacts"></div>
+        <p class="sub" style="margin:0;max-width:84ch">How to read it: each row is a group of customers who signed in the same quarter. Read across to follow that group as it ages (+1q is one quarter after signing); read down a column to compare groups at the same age. Darker is better. The bottom-right is empty because newer groups haven't been customers that long yet.</p>
+        <p class="sub" style="margin:0;max-width:84ch">Why this is lower than GRR: cohorts count customers, GRR counts pounds. Smaller customers leave more often, so keeping 81% of logos can still mean keeping about 86% of ARR.</p>
+        <div class="tablewrap"><table class="heat" id="cohortTable"></table></div>
+      </div>
+    </div>
+
+    <div class="mgroup" id="m-pipeline">
+      <h2>Pipeline</h2>
+      <div class="grid2">
+        <div class="card">
+          <div class="head"><h3>Pipeline velocity</h3><div class="sub">Bookings the open pipeline produces per day</div></div>
+          <div class="formula">deals × average deal × win rate ÷ cycle days</div>
+          <div class="levers" id="velLevers"></div>
+          <p class="sub" style="margin:0" id="velText"></p>
+        </div>
+        <div class="card">
+          <div class="head"><h3>Pipeline coverage</h3><div class="sub">This quarter, and early look at next quarter against the same quota</div></div>
+          <div class="tablewrap"><table id="covTable"></table></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="head"><h3>Stage conversion</h3><div class="sub">Closed opportunities, Q1 FY25 to Q3 FY26</div></div>
+          <div class="tablewrap"><table id="funnelTable"></table></div>
+        </div>
+        <div class="card">
+          <div class="head"><h3>Average time in stage</h3><div class="sub">History vs today's open deals. Limit is where "stuck" starts</div></div>
+          <div class="tablewrap"><table id="tisTable"></table></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="head"><h3>Win rate and cycle length</h3><div class="sub">Won ÷ (won + lost) for deals that reached Qualification. Cycle is median days, created to won</div></div>
+        <div class="tablewrap"><table id="winTable"></table></div>
+        <p class="skey">Win rate: Good at 30% or more, Watch from 20%, Act below.</p>
+      </div>
+    </div>
+
+    <div class="mgroup" id="m-forecasting">
+      <h2>Forecasting</h2>
+      <div class="card chart">
+        <div class="head"><h3>Forecast vs actuals</h3><div class="sub">Commit called in week 3 vs bookings at quarter end</div></div>
+        <div id="fvaChart"></div>
+        <div class="legend"><span class="keys"><span style="--c:var(--line)">Forecast call</span><span style="--c:var(--accent)">Actual bookings</span></span></div>
+        <div class="tablewrap"><table id="fvaTable"></table></div>
+        <p class="skey">Accuracy: Good at 95% or more, Watch from 90%, Act below. Bias beyond ±3% is labelled sandbagged or over-called.</p>
+      </div>
+      <div class="card">
+        <div class="head"><h3>Forecast category calibration</h3><div class="sub">How often deals in each category actually closed, from history. The landing forecast uses the calibrated rates</div></div>
+        <div class="tablewrap"><table id="calTable"></table></div>
+        <p class="skey">Calibrated rates replace the assumed ones in every landing figure.</p>
+      </div>
+    </div>
+
+    <div class="mgroup" id="m-winloss">
+      <h2>Win/loss and competitors</h2>
+      <p class="sub" style="margin:0">Closed deals from Q1 FY25 to Q3 FY26 that reached Qualification.</p>
+      <div class="grid2">
+        <div class="card">
+          <div class="head"><h3>Why we lose</h3><div class="sub">Ranked by value lost</div></div>
+          <div class="tablewrap"><table id="wlReasons"></table></div>
+        </div>
+        <div class="card">
+          <div class="head"><h3>Head to head</h3><div class="sub">Win rate on deals where each competitor was involved</div></div>
+          <div class="tablewrap"><table id="wlComps"></table></div>
+        <p class="skey">Good: at least 5 points above our overall win rate. Watch: within 5 points. Act: more than 5 points below.</p>
+          <p class="sub" style="margin:0" id="wlNote"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mgroup" id="m-efficiency">
+      <h2>Efficiency</h2>
+      <div class="card">
+        <div class="head"><h3>CAC payback, net magic number, Rule of 40</h3><div class="sub">Sales &amp; marketing spend is lagged one quarter</div></div>
+        <div class="tablewrap"><table id="effTable"></table></div>
+        <p class="skey">CAC payback: Good at 18 months or less, Watch to 30. Net magic number: Good at 0.75 or more, Watch from 0.5. Rule of 40: Good at 40% or more, Watch from 25%.</p>
+      </div>
+    </div>
+
+    <div class="mgroup" id="m-dealdesk">
+      <h2>Deal desk</h2>
+      <div class="facts" id="ddFacts"></div>
+      <div class="card">
+        <div class="head"><h3>Approval queue</h3><div class="sub">Late-stage deals with discount or terms that still need sign-off</div></div>
+        <div class="tablewrap"><table id="ddQueue"></table></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="head"><h3>Approval matrix</h3></div>
+          <div class="tablewrap"><table id="ddMatrix"></table></div>
+        </div>
+        <div class="card">
+          <div class="head"><h3>Does discounting buy wins?</h3><div class="sub">Win rate from Proposal onward, by discount offered</div></div>
+          <div class="tablewrap"><table id="ddBands"></table></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mgroup" id="m-meddpicc">
+      <h2>MEDDPICC</h2>
+      <div class="card">
+        <div class="head"><h3>What each stage needs</h3><div class="sub">Minimum evidence: 1 = partly evidenced, 2 = confirmed with the buyer</div></div>
+        <div class="tablewrap"><table class="heat" id="mReq"></table></div>
+      </div>
+      <div class="card">
+        <div class="head"><h3>Open deals from Solution onward</h3><div class="sub">Outlined cells are below what the stage needs. Gaps feed the next-steps list</div></div>
+        <div class="legend"><span><span class="mp mp-2">2</span> Confirmed</span><span><span class="mp mp-1">1</span> Partly evidenced</span><span><span class="mp mp-0">0</span> Unknown</span><span><span class="mp mp-1 gap">1</span> Below stage minimum</span></div>
+        <div class="tablewrap"><table class="heat" id="mDeals"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLANNING -->
+  <section class="panel" id="p-planning" role="tabpanel" aria-labelledby="t-planning" hidden>
+    <div class="mgroup">
+      <h2>Quarter scenario</h2>
+      <div class="facts" id="scFacts"></div>
+      <div class="card">
+        <div class="toolbar">
+          <div class="head" style="border:0;padding:0"><h3>What if?</h3><div class="sub">Mark deals won or lost, or pull next-quarter deals into Q4. Everything else stays at its forecast rate</div></div>
+          <div class="btnrow">
+            <button type="button" class="linkbtn" data-preset="commit">Win all clean Commit</button>
+            <button type="button" class="linkbtn" data-preset="flagged">Lose all flagged</button>
+            <button type="button" class="linkbtn" data-preset="reset">Reset</button>
+          </div>
+        </div>
+        <div class="tablewrap"><table id="scDeals"></table></div>
+      </div>
+      <div class="card" id="scRepsCard">
+        <div class="head"><h3>Effect on reps</h3><div class="sub">Attainment and commission for deals marked won</div></div>
+        <div class="tablewrap"><table id="scReps"></table></div>
+      </div>
+    </div>
+    <div class="mgroup">
+      <h2>FY27 capacity and hiring</h2>
+      <div class="controls" role="group" aria-label="Capacity assumptions">
+        <div class="ctrl-title"><h3>Capacity assumptions</h3><span class="sub">Annual quota per rep is taken from this quarter's quota × 4</span></div>
+        <label for="capTarget">FY27 bookings target (£)<input id="capTarget" type="number" min="0" step="100000" value="8500000"></label>
+        <label for="capAttr">Annual rep attrition (%)<input id="capAttr" type="number" min="0" max="60" step="1" value="15"></label>
+        <label for="capProd">Productivity (% of quota)<input id="capProd" type="number" min="10" max="150" step="1"><span class="hint">Default: average of fully ramped reps</span></label>
+        <label for="capHires">Hires planned<input id="capHires" type="number" min="0" max="40" step="1" value="0"></label>
+        <label for="capMonth">Hires start in<select id="capMonth"></select></label>
+      </div>
+      <div class="facts" id="capFacts"></div>
+      <div class="card chart">
+        <div class="head"><h3>Monthly capacity against target</h3><div class="sub">New hires produce nothing for three months, a third for months 3–5, two thirds for 6–8, then full</div></div>
+        <div id="capChart"></div>
+        <div class="legend"><span class="keys"><span style="--c:var(--accent)">Current team</span><span style="--c:var(--good)">Planned hires</span></span><span><i></i>Target per month</span></div>
+        <p style="margin:0" id="capText"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- YOUR DATA -->
+  <section class="panel" id="p-data" role="tabpanel" aria-labelledby="t-data" hidden>
+    <div class="card prose" style="max-width:none">
+      <div class="head"><h3>Run the checks on your own pipeline</h3><div class="sub">Export open opportunities from your CRM as CSV, then load the file or paste it below</div></div>
+      <p class="notice-sm"><b>Private by design.</b> The file is read inside this browser tab. Nothing is uploaded, sent or stored, and it's gone when you close the page.</p>
+      <p>Needed columns: <span class="mono">id, owner, stage, amount, close date, forecast category</span>. Optional: <span class="mono">account, last activity, stage change date, next step, push count, type</span>. Common CRM header names are recognised. Dates can be YYYY-MM-DD or DD/MM/YYYY. Stages must be Discovery, Qualification, Solution, Proposal or Negotiation.</p>
+      <div class="btnrow">
+        <label class="linkbtn filebtn" for="impFile">Choose a CSV file<input id="impFile" type="file" accept=".csv,text/csv"></label>
+        <button type="button" class="linkbtn" id="impCopy">Copy header row</button>
+        <button type="button" class="linkbtn" id="impSample">Reload sample</button>
+        <button type="button" class="btn" id="impRun">Analyse</button>
+      </div>
+      <label for="impText" class="sub">CSV (a fictional sample is loaded)</label>
+      <textarea id="impText" rows="9" spellcheck="false"></textarea>
+      <div class="controls" style="box-shadow:none" role="group" aria-label="Imported pipeline assumptions">
+        <label for="impQuota">Quota for this pipeline (£)<input id="impQuota" type="number" min="0" step="10000" value="300000"></label>
+        <label for="impWon">Closed won so far (£)<input id="impWon" type="number" min="0" step="10000" value="120000"></label>
+        <span class="sub" style="align-self:end">Win rate, stale days and quarter dates come from the assumptions at the top.</span>
+      </div>
+    </div>
+    <div id="impOut" class="panel" style="gap:18px"></div>
+  </section>
+
+  <!-- METHOD -->
+  <section class="panel" id="p-method" role="tabpanel" aria-labelledby="t-method" hidden>
+    <div class="card prose">
+      <div class="eyebrow">How it works</div>
+      <h2>Three layers, one source of truth</h2>
+      <ol class="steps">
+        <li><b>Fictitious data.</b> <span id="dataLine"></span> All of it is generated from fixed seeds, so the same numbers appear every time.</li>
+        <li><b>Calculation engine.</b> Plain, separately tested functions for hygiene, coverage, landing, confidence, commission, marketing, renewals, capacity and attribution. The page only displays what the engine returns, so the tabs can't contradict each other.</li>
+        <li><b>Judgement layer.</b> Rules that turn figures into findings: which deals need a next step, which teams need support, which decisions leadership should take this week. Each rule is written down below, so every recommendation can be traced to a number.</li>
+      </ol>
+      <p>Read the tabs in order: Executive summary first for the answer, then the tabs behind it for the evidence. The assumptions at the top of the page feed every tab.</p>
+    </div>
+    <div class="card prose" style="max-width:none">
+      <div class="eyebrow">How I built it, and how I'd do it for real</div>
+      <h2>Directed by a RevOps practitioner, built with AI</h2>
+      <div class="grid2" style="align-items:start">
+        <ol class="steps">
+          <li><b>Start from the decision, not the data.</b> I began with the questions a CRO asks at quarter end and worked back to the measures that answer them.</li>
+          <li><b>Define before building.</b> Every measure was written down with its formula and threshold first, so the build had a specification to meet.</li>
+          <li><b>Keep the maths apart from the page.</b> One calculation engine feeds every tab, so two tabs can't disagree.</li>
+          <li><b>Make the test data realistic.</b> A demo that's all red teaches nothing. The pipeline is mostly tidy, with the kind of problems real teams have.</li>
+        </ol>
+        <ol class="steps" start="5">
+          <li><b>Test everything, then reconcile.</b> Each calculation has worked examples, and team, rep and company totals are checked against each other.</li>
+          <li><b>Review three ways.</b> Method by a RevOps expert role, wording by an editor role, and a legal check before anything was shared.</li>
+          <li><b>Iterate on what users actually see.</b> I reviewed each version as an executive would and sent back what wasn't clear, right down to box alignment.</li>
+          <li><b>Check it in a real browser.</b> Every tab was rendered on desktop and phone, in light and dark, before release.</li>
+        </ol>
+      </div>
+      <p><b>On a live project</b> I'd add three things: a direct CRM connection in place of the CSV import, with permissions enforced at sign-in; thresholds and forecast rates agreed with Finance and sales leadership, not rules of thumb; and a named owner for every action the page recommends.</p>
+      <p class="sub">To be clear about roles: the reviewers and developer were one AI model working through those roles at my direction. I made the decisions; the AI wrote the code.</p>
+    </div>
+    <div class="grid2">
+      <div class="card prose">
+        <div class="eyebrow">Reading the colours</div>
+        <ul class="steps">
+          <li>Green, amber and red mean the same on every tab; the words change to suit the measure (On track, Healthy, Ahead).</li>
+          <li>Every red or amber says why: a reason line on each metric tile, a "Why" column for teams, the points taken off each deal's health score, and a line under each table giving the exact thresholds.</li>
+          <li>Thresholds are common SaaS rules of thumb or stated demo settings, never presented as industry law.</li>
+        </ul>
+      </div>
+      <div class="card prose">
+        <div class="eyebrow">Who sees what</div>
+        <ul class="steps">
+          <li><b>Executives</b> see every team, manager and rep.</li>
+          <li><b>Team leads</b> see commission for their own team and reps only, on the Commission tab and in the scenario planner. Commission appears nowhere else.</li>
+          <li>In this demo the "Viewing as" switch stands in for sign-in. In a live system, role permissions in the CRM or BI tool would enforce it.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card prose">
+        <div class="eyebrow">The professor's three rules</div>
+        <ul class="steps">
+          <li><b>Trust the data, then the coverage, then the trend.</b> Dirty pipeline inflates coverage, and inflated coverage hides a weak forecast.</li>
+          <li><b>Calibrate before you forecast.</b> Use the rates at which your own deals have actually closed, not rules of thumb.</li>
+          <li><b>Define every number, label every assumption.</b> If a figure can't be explained in one line, it shouldn't be on a leadership page.</li>
+        </ul>
+      </div>
+      <div class="card prose">
+        <div class="eyebrow">What review changed</div>
+        <ul class="steps">
+          <li>Coverage is measured against quota still to find, with the target set by win rate rather than a fixed 3x.</li>
+          <li>Coverage is shown with and without deals that have issues; the gap is the case for pipeline hygiene.</li>
+          <li>Forecast rates are calibrated from history: Commit closes at 80%, not the 85% assumed.</li>
+          <li>Testing caught an empty pipeline scoring 44/100 confidence, a CSV without a next-step column flagging every deal, and health deductions that didn't add up to the score. All fixed.</li>
+          <li>Velocity no longer gets a "Good" with no benchmark behind it, and commission is visible only to the people entitled to see it.</li>
+          <li>A legal check replaced competitor names that belonged to real companies with Rival A, B and C, and confirmed nothing comes from any real employer.</li>
+          <li>Stated limitations: single-touch source attribution, assumed renewal rates by health band, and commission estimates that treat each deal on its own.</li>
+        </ul>
+      </div>
+    </div>
+    <details class="card fold">
+      <summary>Formula reference</summary>
+      <dl class="defs">
+        <div class="defgroup">Executive summary</div>
+        <dt>Landing range</dt><dd>Floor: <code>closed + clean Commit × 85%</code>. Likely: <code>closed + Σ amount × category rate</code> with Commit 85%, Best Case 45%, Pipeline 15%, and flagged deals halved. Stretch: <code>closed + all Commit + all Best Case + Pipeline × 15%</code>. Built so floor ≤ likely ≤ stretch always holds.</dd>
+        <dt>Pipeline confidence</dt><dd>Weighted score out of 100: clean coverage against what's needed (30), in-quarter value with no hygiene issues (20), Commit and Best Case value with full MEDDPICC (20), forecast accuracy over the last four quarters (15), and the share of quota still to find already sitting in clean Commit (15). 75+ is high, 55+ medium.</dd>
+        <dt>Team flags</dt><dd>A team is flagged for: likely landing under 90%, clean coverage under what's needed, fewer than 60% of deals clean, or two or more reps behind for tenure. One flag is "watch"; three or more is "needs support".</dd>
+        <dt>Tenure</dt><dd>Expected attainment rises in a straight line from 40% at hire to 100% at 12 months. A rep is ahead at 110% or more of that expectation, behind under 90%. Ramp is the first nine months.</dd>
+        <div class="defgroup">Marketing</div>
+        <dt>Funnel</dt><dd>MQL: marketing qualified lead. SAL: accepted and worked by an SDR. SQL: qualified by the SDR and handed to an AE. Opportunity: accepted by the AE. Rates are from the previous stage.</dd>
+        <dt>Dumped and recirculated</dt><dd>Dumped = disqualified, with a reason, and not coming back. Recirculated = recycled to nurture, to re-qualify later.</dd>
+        <dt>Where marketing pipeline stands</dt><dd>Every opportunity that started as an MQL: landed (won), likely (open Commit or Best Case, no hygiene issue), may not land (Pipeline category or any hygiene issue), lost. Uses the same rules as the landing forecast.</dd>
+        <dt>Conversion of decided leads</dt><dd><code>SQLs ÷ (SQLs + disqualified + recycled)</code>. Leaves out leads still being worked, which would otherwise drag the rate down.</dd>
+        <dt>Pipeline per £1</dt><dd><code>pipeline from a channel's MQLs ÷ channel spend</code>. Single-touch: each deal is credited to one source.</dd>
+        <div class="defgroup">Activity, renewals and planning</div>
+        <dt>Activity</dt><dd>Calls, emails and meetings logged in the last 30 days. Meetings a week = meetings ÷ (30 ÷ 7). Connect rate = conversations ÷ calls; show rate = held ÷ booked.</dd>
+        <dt>Account health</dt><dd>Starts at 100 and loses points: usage down over 20% (−30) or 5–20% (−15), each priority-1 ticket (−8, up to −24), no engaged executive sponsor (−15), NPS below 0 (−15) or below 30 (−5), late payment (−10), champion left (−20). 70+ is healthy, 45+ at risk, below that critical. Forecast renewal uses 97%, 80% and 50% by band (assumed).</dd>
+        <dt>Scenario</dt><dd>Deals marked won count in full and pay commission on top of each rep's closed business; deals marked lost drop out; pulled deals move into Q4 at their normal category rate. Everything else uses the calibrated landing rates.</dd>
+        <dt>Capacity</dt><dd><code>Σ months (annual quota ÷ 12 × ramp × productivity × survival)</code>. Ramp is 0% for months 0–2, 33% for 3–5, 66% for 6–8, then 100%. Survival applies annual attrition month by month. Productivity defaults to the average trailing attainment of reps with 12+ months' tenure.</dd>
+        <div class="defgroup">Win/loss and attribution</div>
+        <dt>Calibrated category rates</dt><dd>For historical deals that reached Solution, the share that closed won from each forecast category they sat in. These replace the assumed 85/45/15 in every landing figure.</dd>
+        <dt>Head-to-head win rate</dt><dd>Won ÷ closed for deals where that competitor was involved. Small samples swing; check the deal count.</dd>
+        <dt>Attribution models</dt><dd>First touch: all credit to the first channel. Last touch: all to the converting MQL. Linear: equal shares. Position-based: 40% first, 40% last, 20% shared across the middle. Every model credits the same total.</dd>
+        <div class="defgroup">Your data</div>
+        <dt>CSV import</dt><dd>Runs the same hygiene rules, next steps, coverage and landing calculations on your file, in the browser. Checks that need a column you didn't provide are skipped and listed, rather than failed.</dd>
+        <div class="defgroup">Coverage</div>
+        <dt>Quota remaining</dt><dd><code>quota − closed won</code>. Coverage is measured against what is left to find.</dd>
+        <dt>Raw, clean and weighted coverage</dt><dd><code>in-quarter pipeline ÷ quota remaining</code>; clean counts only deals with no hygiene issue; weighted multiplies by stage probability (target 1.0x).</dd>
+        <dt>Coverage needed</dt><dd><code>1 ÷ win rate</code>. The "3x rule" is this with a 33% win rate baked in. The win rate box defaults to the TTM win rate from the metrics tab.</dd>
+        <div class="defgroup">Next steps and commission</div>
+        <dt>Next steps</dt><dd>One play per hygiene issue, one per MEDDPICC element below the stage minimum, and one for any discount or terms awaiting sign-off. Ranked by <code>priority × deal value</code>.</dd>
+        <dt>Commission views</dt><dd>Executives see every team; a team lead sees only their own team and reps, on the Commission tab and in the scenario planner. Commission is not shown anywhere else. In a live system this would be enforced by sign-in and role permissions.</dd>
+        <dt>Manager override</dt><dd><code>2% × team closed won</code>; expected override uses the team's probability-weighted Q4 bookings.</dd>
+        <dt>Commission if won</dt><dd><code>base slice × rate + slice above quota × rate × 1.5</code>, assuming this deal alone closes on top of what the rep has closed. Expected = that × stage probability. Potential assumes every in-quarter deal closes in close-date order.</dd>
+        <div class="defgroup">Retention</div>
+        <dt>GRR</dt><dd><code>(ARR a year ago − churn − contraction over the year) ÷ ARR a year ago</code>, capped at 100%.</dd>
+        <dt>NRR</dt><dd><code>(ARR a year ago + expansion − churn − contraction) ÷ ARR a year ago</code>. Includes expansion from customers won during the year, a common simplification that flatters NRR slightly.</dd>
+        <dt>Expansion velocity</dt><dd>Expansion ARR per month (TTM), expansion as a share of the starting base, and quarter-on-quarter change in expansion bookings.</dd>
+        <dt>Renewal forecast accuracy</dt><dd><code>1 − |renewed − forecast| ÷ renewed</code>.</dd>
+        <div class="defgroup">Pipeline</div>
+        <dt>Pipeline velocity</dt><dd><code>qualified open deals × average deal × win rate ÷ cycle days</code>. The four levers are the four things a sales leader can change.</dd>
+        <dt>Stage conversion</dt><dd>Deals that reached the next stage ÷ deals that reached this one.</dd>
+        <dt>Win rate</dt><dd>Won ÷ (won + lost), only deals that reached Qualification. Counting Discovery drop-outs as losses would understate it badly.</dd>
+        <dt>Cycle length</dt><dd>Median days from creation to won. Median, because a few marathon deals drag the mean.</dd>
+        <div class="defgroup">Forecasting and efficiency</div>
+        <dt>Forecast accuracy and bias</dt><dd>Accuracy <code>1 − |actual − call| ÷ actual</code>. Bias <code>(call − actual) ÷ actual</code>: persistently negative means sandbagging, positive means happy ears.</dd>
+        <dt>CAC payback (months)</dt><dd><code>last quarter's S&amp;M ÷ (net new ARR × gross margin ÷ 12)</code>.</dd>
+        <dt>Net magic number</dt><dd><code>net new ARR ÷ last quarter's S&amp;M</code>. Above 0.75 says spend more; below 0.5 says fix the engine first.</dd>
+        <dt>Rule of 40</dt><dd><code>revenue growth YoY + free cash flow margin</code>.</dd>
+        <div class="defgroup">Projection</div>
+        <dt>Trend line</dt><dd>Least-squares straight line through the quarters shown, projected four quarters on. The shaded band is a 95% prediction interval; it widens because the further out you go, the less the past constrains the future. A straight line is a sense check, not a forecast: it ignores seasonality and anything you plan to change.</dd>
+      </dl>
+    </details>
+    <details class="card fold qa">
+      <summary>Automated tests: <span id="qaCount"></span> passing</summary>
+      <ul id="qaList"></ul>
+    </details>
+  </section>
+
+  <div class="tour" id="tour" hidden role="dialog" aria-labelledby="tourTitle" aria-live="polite">
+    <div class="tour-top"><span class="tour-step" id="tourStep"></span><button type="button" class="tour-x" id="tourClose" aria-label="Close the tour">×</button></div>
+    <h3 id="tourTitle"></h3>
+    <p id="tourText"></p>
+    <div class="tour-nav"><button type="button" class="linkbtn" id="tourBack">Back</button><button type="button" class="btn" id="tourNext">Next</button></div>
+  </div>
+
+  <footer><p><b>Built by John Webb</b> with an AI model, as a demonstration.</p><p><b>Fictitious data.</b> All names and figures are invented for demonstration; any resemblance to real organisations or people is coincidental.</p><p>Calendar fiscal year: Q4 FY26 runs 1 Oct to 31 Dec 2026. Deals closing after the quarter count toward hygiene and next quarter's coverage, not this quarter's.</p></footer>
+</div>
+
+<script>/*ENGINE*/</script>
+<script>
+(function () {
+  const E = window.RevEngine;
+  const AS_OF = "2026-11-04", P_START = "2026-10-01", P_END = "2026-12-31";
+  const deals = E.attributeDeals(E.generateDeals(AS_OF));
+  const leads = E.generateLeads(AS_OF, deals);
+  const TOUCHES = E.generateTouches(leads);
+  const ACT = E.generateActivity();
+  const RENEW = E.generateRenewals(AS_OF);
+  const hist = E.generateHistory();
+  const M = E.saasMetrics(hist);
+  const opps = E.generateOppHistory();
+  const WR = E.winRates(opps);
+  const TTM_WR = E.ttmWinRate(opps), TTM_CYCLE = E.ttmCycle(opps);
+  const OPPS_E = E.enrichOpps(opps), CAL = E.calibrateRates(OPPS_E);
+  const $ = (id) => document.getElementById(id);
+  const gbp = (n) => (n < 0 ? "−£" : "£") + Math.round(Math.abs(n)).toLocaleString("en-GB");
+  const gbpK = (n) => Math.abs(n) >= 1e6 ? "£" + (n / 1e6).toFixed(2) + "m" : "£" + Math.round(n / 1000) + "k";
+  const gbpM = (n) => "£" + (n / 1e6).toFixed(2) + "m";
+  const x = (n) => isFinite(n) ? n.toFixed(2) + "x" : "∞";
+  const pct = (n) => Math.round(n * 100) + "%";
+  const pct1 = (n) => (n * 100).toFixed(1) + "%";
+  const sgn = (n, f) => { const t = f(Math.abs(n)); return (/[1-9]/.test(t) ? (n > 0 ? "+" : n < 0 ? "−" : "") : "") + t; };
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmtDate = (iso) => new Date(iso + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+  const pill = (level, text) => level === "info" ? `<span class="pill st-info">${text || "Info"}</span>` : `<span class="pill st-${level}">${text || { good: "Good", warn: "Watch", bad: "Act" }[level]}</span>`;
+  // Deductions that always add up exactly to 100 minus the health score.
+  const deductions = (flags) => { let cw = 0, prev = 0; return flags.map((f) => { cw += f.weight; const c = Math.round((100 * cw) / E.MAX_WEIGHT), d = c - prev; prev = c; return { d, label: f.label }; }); };
+  const priTag = (p) => `<span class="pri pri-${p}">${p}</span>`;
+  let ruleFilter = null;
+
+  $("wr").value = Math.round(TTM_WR * 100);
+  const ttmClosed = opps.filter((o) => o.closeQi >= E.NQ - 4 && o.reached >= 1);
+  const TTM_WR_VALUE = ttmClosed.reduce((a, o) => a + (o.won ? o.amount : 0), 0) / (ttmClosed.reduce((a, o) => a + o.amount, 0) || 1);
+  $("wrHint").textContent = "TTM actual: " + pct1(TTM_WR) + " by count, " + pct1(TTM_WR_VALUE) + " by value";
+
+  function ctx() {
+    const num = (id, d) => { const v = parseFloat($(id).value); return isFinite(v) ? v : d; };
+    return { asOf: AS_OF, periodStart: P_START, periodEnd: P_END,
+      quota: Math.max(0, num("quota", 0)), closedWon: Math.max(0, num("won", 0)),
+      winRate: Math.min(1, Math.max(0.01, num("wr", 33) / 100)), staleDays: Math.max(1, num("stale", 14)), catRates: CAL.rates };
+  }
+
+  // ---------- Charts (hand-drawn SVG, theme tokens) ----------
+  function niceTicks(min, max, n = 4) {
+    if (min === max) { min -= 1; max += 1; }
+    const raw = (max - min) / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+    const lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step, out = [];
+    for (let v = lo; v <= hi + step / 2; v += step) out.push(+v.toFixed(10));
+    return out;
+  }
+  function lineChart({ labels, values, trend, fmt, H = 280, zeroBase = false }) {
+    const W = 720, L = 62, R = 18, T = 14, B = 34;
+    const nAll = labels.length, n = values.length;
+    let ys = values.slice();
+    if (trend) for (const p of trend.projection) ys.push(p.lo, p.hi);
+    let lo = Math.min(...ys), hi = Math.max(...ys);
+    if (zeroBase) lo = Math.min(0, lo);
+    const pad = (hi - lo) * 0.08 || 1; lo -= pad; hi += pad;
+    const ticks = niceTicks(lo, hi);
+    const y0 = ticks[0], y1 = ticks[ticks.length - 1];
+    const X = (i) => L + (nAll === 1 ? 0 : (i * (W - L - R)) / (nAll - 1));
+    const Y = (v) => T + (H - T - B) * (1 - (v - y0) / (y1 - y0));
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Line chart">`;
+    for (const t of ticks) s += `<line x1="${L}" x2="${W - R}" y1="${Y(t)}" y2="${Y(t)}" style="stroke:var(--line)" stroke-width="1"/><text x="${L - 8}" y="${Y(t) + 4}" text-anchor="end">${fmt(t)}</text>`;
+    const every = nAll > 10 ? 2 : 1;
+    labels.forEach((lb, i) => { if (i % every === 0 || i === nAll - 1) s += `<text x="${X(i)}" y="${H - 10}" text-anchor="middle">${lb.replace(" FY", "·")}</text>`; });
+    if (trend) {
+      const last = n - 1, pts = [{ x: last, y: values[last], lo: values[last], hi: values[last] }, ...trend.projection];
+      s += `<path d="M${pts.map((p) => X(p.x) + "," + Y(p.hi)).join("L")}L${pts.slice().reverse().map((p) => X(p.x) + "," + Y(p.lo)).join("L")}Z" style="fill:var(--accent);opacity:.13"/>`;
+      s += `<line x1="${X(n - 0.5)}" x2="${X(n - 0.5)}" y1="${T}" y2="${H - B}" style="stroke:var(--line)" stroke-dasharray="3 3"/>`;
+      s += `<text x="${X(n - 0.5) + 6}" y="${T + 10}">Projection</text>`;
+      s += `<path d="M${trend.fit.map((v, i) => X(i) + "," + Y(v)).join("L")}" fill="none" style="stroke:var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+      s += `<path d="M${pts.map((p) => X(p.x) + "," + Y(p.y)).join("L")}" fill="none" style="stroke:var(--accent)" stroke-width="2" stroke-dasharray="6 4"/>`;
+      const e = trend.projection[trend.projection.length - 1];
+      s += `<circle cx="${X(e.x)}" cy="${Y(e.y)}" r="4" style="fill:var(--surface);stroke:var(--accent)" stroke-width="2"/>`;
+    }
+    s += `<path d="M${values.map((v, i) => X(i) + "," + Y(v)).join("L")}" fill="none" style="stroke:var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>`;
+    values.forEach((v, i) => { s += `<circle cx="${X(i)}" cy="${Y(v)}" r="${i === n - 1 ? 4.5 : 2.5}" style="fill:var(--accent)"><title>${labels[i]}: ${fmt(v)}</title></circle>`; });
+    return s + "</svg>";
+  }
+  function spark(values, level) {
+    const W = 120, H = 30, lo = Math.min(...values), hi = Math.max(...values), r = hi - lo || 1;
+    const P = values.map((v, i) => [(i * W) / (values.length - 1), 3 + (H - 6) * (1 - (v - lo) / r)]);
+    const col = level === "bad" ? "--bad" : level === "good" ? "--good" : "--accent";
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="M${P.map((p) => p.join(",")).join("L")}" fill="none" style="stroke:var(${col})" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg>`;
+  }
+  function barPairs({ labels, a, b, fmt, H = 240 }) {
+    const W = 720, L = 62, R = 12, T = 12, B = 30, n = labels.length;
+    const hi = Math.max(...a, ...b) * 1.08, ticks = niceTicks(0, hi), top = ticks[ticks.length - 1];
+    const Y = (v) => T + (H - T - B) * (1 - v / top), slot = (W - L - R) / n, bw = Math.min(26, slot * 0.32);
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Forecast versus actual bar chart">`;
+    for (const t of ticks) s += `<line x1="${L}" x2="${W - R}" y1="${Y(t)}" y2="${Y(t)}" style="stroke:var(--line)"/><text x="${L - 8}" y="${Y(t) + 4}" text-anchor="end">${fmt(t)}</text>`;
+    labels.forEach((lb, i) => {
+      const cx = L + slot * (i + 0.5);
+      s += `<rect x="${cx - bw - 1}" y="${Y(a[i])}" width="${bw}" height="${Y(0) - Y(a[i])}" rx="2" style="fill:var(--line)"><title>${lb} call ${fmt(a[i])}</title></rect>`;
+      s += `<rect x="${cx + 1}" y="${Y(b[i])}" width="${bw}" height="${Y(0) - Y(b[i])}" rx="2" style="fill:var(--accent)"><title>${lb} actual ${fmt(b[i])}</title></rect>`;
+      s += `<text x="${cx}" y="${H - 10}" text-anchor="middle">${lb.replace(" FY", "·")}</text>`;
+    });
+    return s + "</svg>";
+  }
+
+  // ---------- Coverage ----------
+  function renderCoverage(c, cv) {
+    const v = cv.verdict;
+    $("verdict").className = "verdict lv-" + v.level;
+    $("verdict").innerHTML = `<span class="pill">${{ good: "Covered", warn: "At risk", bad: "Short" }[v.level]}</span><span>${esc(v.text)}</span>`;
+    $("covFacts").innerHTML = [
+      [gbp(cv.remaining), "Quota still to find (" + pct(cv.attainmentToDate) + " attained)"],
+      [x(cv.required), "Coverage needed at " + pct(c.winRate) + " win rate"],
+      [gbpK(cv.pipelineNeeded), "Pipeline needed this quarter"],
+      [cv.gap > 0 ? gbpK(cv.gap) : "None", "Gap on raw pipeline"],
+      [cv.cleanGap > 0 ? gbpK(cv.cleanGap) : "None", "Gap on clean pipeline"],
+      [cv.daysLeft + " days", "Left in the quarter"],
+    ].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}</span></div>`).join("");
+    const rows = [
+      ["Raw", cv.rawCoverage, cv.raw, cv.inPeriodCount + " deals closing in Q4", cv.required],
+      ["Clean", cv.cleanCoverage, cv.clean, "Excludes deals with any hygiene issue", cv.required],
+      ["Weighted", cv.weightedCoverage, cv.weighted, "Amount × stage probability. Target is 1.0x", 1],
+    ];
+    const scale = Math.max(cv.required, 1, ...rows.map((r) => r[1]).filter(isFinite)) * 1.12;
+    $("bars").innerHTML = rows.map(([name, ratio, val, note, target]) => {
+      const w = isFinite(ratio) ? Math.min(100, (ratio / scale) * 100) : 100;
+      return `<div class="bar"><div class="top"><b>${name}</b><span class="num">${x(ratio)} · ${gbpK(val)}</span></div>
+        <div class="track"><div class="fill ${ratio >= target ? "ok" : "short"}" style="width:${w}%"></div><div class="req" style="left:calc(${Math.min(100, (target / scale) * 100)}% - 1px)"></div></div>
+        <small>${note}</small></div>`;
+    }).join("");
+    const cats = [["Commit", "var(--good)"], ["Best Case", "var(--accent)"], ["Pipeline", "var(--muted)"], ["Omitted", "var(--line)"]];
+    const tot = cats.reduce((a, [k]) => a + (cv.byCategory[k] || 0), 0) || 1;
+    $("catSub").textContent = gbp(cv.raw) + " across " + cv.inPeriodCount + " deals; " + cv.outOfPeriodCount + " more close after the quarter";
+    $("catStack").innerHTML = cats.map(([k, col]) => `<span style="width:${((cv.byCategory[k] || 0) / tot) * 100}%;background:${col}" title="${k}"></span>`).join("");
+    $("catKeys").innerHTML = cats.map(([k, col]) => `<span style="--c:${col}">${k}</span>`).join("");
+    let run = 0;
+    $("catTable").innerHTML = `<thead><tr><th>Category</th><th class="n">Value</th><th class="n">Running total</th><th class="n">vs remaining</th></tr></thead><tbody>` +
+      cats.map(([k]) => { const val = cv.byCategory[k] || 0; run += val;
+        return `<tr><td>${k}</td><td class="n">${gbpK(val)}</td><td class="n">${gbpK(run)}</td><td class="n">${cv.remaining ? pct(run / cv.remaining) : "–"}</td></tr>`; }).join("") + "</tbody>";
+  }
+
+  // ---------- Hygiene and next steps ----------
+  function stepsCell(d) {
+    const chips = d.flags.length ? d.flags.map((f) => `<span class="chip${f.weight === 1 ? " w1" : ""}" title="${esc(f.label)}">${esc(f.reason)}</span>`).join("") : `<span class="okchip">Clean</span>`;
+    if (!d.steps.length) return `<div class="chips">${chips}</div><div class="step sub">No action needed.</div>`;
+    const [first, ...rest] = d.steps;
+    let h = `<div class="chips">${chips}</div><div class="step">${priTag(first.priority)}${esc(first.text)}</div>`;
+    if (rest.length) h += `<details><summary>${rest.length} more next step${rest.length > 1 ? "s" : ""}</summary><ol>${rest.map((s) => `<li>${priTag(s.priority)}<span class="sub">${esc(s.source)}.</span> ${esc(s.text)}</li>`).join("")}</ol></details>`;
+    return h;
+  }
+  function renderHygiene(c, h, com) {
+    const withSteps = h.deals.filter((d) => d.steps.length).length;
+    $("hygFacts").innerHTML = [
+      [h.cleanCount + " / " + h.total, "Deals with no hygiene issues"],
+      [pct(h.cleanValueRate), "Clean by value"],
+      [gbpK(h.totalValue - h.cleanValue), "Value sitting on flagged deals"],
+      [h.actions.length, "Recommended actions across " + withSteps + " deals"],
+      [h.actions.filter((a) => a.priority === "High").length, "High-priority actions"],
+    ].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}</span></div>`).join("");
+
+    $("actionTable").innerHTML = `<thead><tr><th>Deal</th><th>Priority</th><th>Next step</th><th class="n">Value</th></tr></thead><tbody>` +
+      h.actions.slice(0, 10).map((a) => `<tr><td><div>${esc(a.account)}</div><div class="sub">${esc(a.owner)} · ${a.stage}</div></td><td>${priTag(a.priority)}</td><td><div>${esc(a.text)}</div><div class="sub">${esc(a.source)}</div></td><td class="n">${a.amount ? gbpK(a.amount) : "–"}</td></tr>`).join("") + "</tbody>";
+
+    $("ruleTable").innerHTML = `<thead><tr><th>Rule</th><th class="n">Weight</th><th class="n">Deals</th><th class="n">Value</th></tr></thead><tbody>` +
+      h.byRule.slice().sort((a, b) => b.count - a.count).map((r) =>
+        `<tr class="ruleRow${ruleFilter === r.id ? " on" : ""}" data-rule="${r.id}" tabindex="0"><td>${esc(r.label)}${r.id === "stale" ? ` <span class="sub">(&gt;${c.staleDays}d)</span>` : ""}</td><td class="n">${r.weight}</td><td class="n">${r.count}</td><td class="n">${gbpK(r.value)}</td></tr>`).join("") + "</tbody>";
+
+    $("ownerTable").innerHTML = `<thead><tr><th>Owner</th><th class="n">Deals</th><th class="n">Flagged</th><th class="n">Actions</th></tr></thead><tbody>` +
+      h.byOwner.map((o) => `<tr><td>${esc(o.owner)}<div class="sub">${E.repOf(o.owner).team}</div></td><td class="n">${o.deals}</td><td class="n">${o.flagged} <span class="sub">(${pct(o.flagged / o.deals)})</span></td><td class="n">${h.actions.filter((a) => a.owner === o.owner).length}</td></tr>`).join("") + "</tbody>";
+
+    const sel = $("ownerFilter"), keep = sel.value;
+    sel.innerHTML = `<option value="">All owners</option>` + E.OWNERS.map((o) => `<option${o === keep ? " selected" : ""}>${esc(o)}</option>`).join("");
+    let list = h.deals.slice();
+    if (ruleFilter) list = list.filter((d) => d.flags.some((f) => f.id === ruleFilter));
+    if (sel.value) list = list.filter((d) => d.owner === sel.value);
+    list.sort((a, b) => a.health - b.health || b.steps.length - a.steps.length || b.amount - a.amount);
+    const rl = ruleFilter && E.RULES.find((r) => r.id === ruleFilter);
+    $("dealHead").textContent = (rl ? rl.label : "All open deals") + " · " + list.length;
+    $("clearFilter").hidden = !ruleFilter;
+    $("dealTable").innerHTML = `<thead><tr><th>Deal</th><th>Owner</th><th>Stage</th><th class="n">Amount</th><th class="n">Close</th><th class="n">Health</th><th>Issues and next steps</th></tr></thead><tbody>` +
+      list.map((d) => {
+        return `<tr><td><div>${esc(d.account)}</div><div class="sub mono">${d.id} · ${esc(d.type)} · ${d.source}</div></td>
+        <td>${esc(d.owner)}</td><td>${d.stage}<div class="sub">${d.forecastCategory}</div></td>
+        <td class="n">${d.amount ? gbp(d.amount) : "–"}</td><td class="n">${fmtDate(d.closeDate)}</td>
+        <td class="n"><span class="health num" style="color:var(${d.health >= 80 ? "--good" : d.health >= 60 ? "--warn" : "--bad"})" title="${d.flags.length ? esc(deductions(d.flags).map((x) => "−" + x.d + " " + x.label).join(", ")) : "No issues"}">${d.health}</span>${d.flags.length ? `<div class="sub">${deductions(d.flags).map((x) => "−" + x.d).join(" ")}</div>` : ""}</td>
+        <td style="min-width:300px">${stepsCell(d)}</td></tr>`; }).join("") + "</tbody>";
+  }
+
+  // ---------- Commission ----------
+  // Who is looking: "" = executive, otherwise a team name (its manager sees only that team).
+  const viewTeam = () => $("viewAs").value;
+  const visibleOwners = () => (viewTeam() ? E.REPS.filter((r) => r.team === viewTeam()).map((r) => r.name) : E.OWNERS);
+  $("viewAs").innerHTML += E.TEAMS.map((t) => `<option value="${t.name}">${t.manager}, ${t.name} team lead</option>`).join("");
+  function renderCommission(c, com, h) {
+    const vt = viewTeam(), owners = visibleOwners(), reps = com.reps.filter((r) => owners.includes(r.owner));
+    const teams = E.commissionByTeam(com, c).filter((t) => !vt || t.team === vt);
+    const tm = vt && E.TEAMS.find((t) => t.name === vt);
+    $("viewNote").innerHTML = vt ? `Showing <b>${vt}</b> only: ${tm.manager} can see their own team and its ${reps.length} reps, and nothing from other teams.` : `Executives see every team, manager and rep. A team lead sees only their own team. <span class="sub">In a live system this is enforced by sign-in and role permissions; here it's a demo switch.</span>`;
+    const sum = (k) => reps.reduce((a, r) => a + r[k], 0), ovr = teams.reduce((a, t) => a + t.overrideEarned, 0);
+    $("comFacts").innerHTML = factsHtml([
+      ["Earned so far", gbp(sum("earned") + ovr), vt ? "team reps plus manager override" : "all reps plus manager overrides"],
+      ["Expected Q4 commission", gbp(sum("expected")), "probability-weighted, open deals"],
+      ["Extra if every Q4 deal closes", gbp(sum("potential")), "the most the pipeline could pay"],
+      ["At risk", gbp(sum("atRisk")), "on deals with hygiene issues"],
+    ]);
+    $("teamComTable").innerHTML = `<thead><tr><th>Team</th><th class="n">Reps</th><th class="n">Quota</th><th class="n">Closed</th><th class="n">Rep commission earned</th><th class="n">Manager override</th><th class="n">Total paid so far</th><th class="n">Cost of sales</th><th class="n">Expected Q4 (reps)</th><th class="n">Expected override</th><th class="n">At risk</th></tr></thead><tbody>` +
+      teams.map((t) => `<tr><td><b>${t.team}</b><div class="sub">Manager: ${t.manager}</div></td><td class="n">${t.reps}</td><td class="n">${gbpK(t.quota)}</td>
+        <td class="n">${gbpK(t.closed)} <span class="pill st-${t.attainment >= 1 ? "good" : "warn"}">${pct(t.attainment)}</span></td><td class="n">${gbp(t.repEarned)}</td><td class="n">${gbp(t.overrideEarned)}</td><td class="n"><b>${gbp(t.totalEarned)}</b></td>
+        <td class="n">${pct1(t.costOfSales)}</td><td class="n">${gbp(t.repExpected)}</td><td class="n">${gbp(t.overrideExpected)}</td><td class="n" style="color:var(${t.repAtRisk ? "--bad" : "--muted"})">${gbp(t.repAtRisk)}</td></tr>`).join("") +
+      (teams.length > 1 ? `<tr class="avg"><td><b>All teams</b></td><td class="n">${teams.reduce((a, t) => a + t.reps, 0)}</td><td class="n">${gbpK(teams.reduce((a, t) => a + t.quota, 0))}</td><td class="n">${gbpK(teams.reduce((a, t) => a + t.closed, 0))}</td>
+        <td class="n">${gbp(teams.reduce((a, t) => a + t.repEarned, 0))}</td><td class="n">${gbp(ovr)}</td><td class="n"><b>${gbp(teams.reduce((a, t) => a + t.totalEarned, 0))}</b></td><td class="n">${pct1(teams.reduce((a, t) => a + t.totalEarned, 0) / teams.reduce((a, t) => a + t.closed, 0))}</td>
+        <td class="n">${gbp(teams.reduce((a, t) => a + t.repExpected, 0))}</td><td class="n">${gbp(teams.reduce((a, t) => a + t.overrideExpected, 0))}</td><td class="n">${gbp(teams.reduce((a, t) => a + t.repAtRisk, 0))}</td></tr>` : "") + "</tbody>";
+    const pick = $("repPick"), keep = owners.includes(pick.value) ? pick.value : owners[0];
+    $("repTable").innerHTML = `<thead><tr><th>Rep</th><th>Attainment</th><th class="n">Earned</th><th class="n">To accelerator</th><th class="n">Q4 pipeline</th><th class="n">Expected</th><th class="n">Potential</th><th class="n">At risk</th><th>Deals</th></tr></thead><tbody>` +
+      reps.map((r) => `<tr${r.owner === keep ? ' class="picked"' : ""}><td>${esc(r.owner)}<div class="sub">${r.team} · quota ${gbpK(r.quota)}</div></td><td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span class="${r.attainment >= 1 ? "ok" : ""}" style="width:${Math.min(100, r.attainment * 100)}%"></span></div><span class="num">${pct(r.attainment)}</span></div></td>
+        <td class="n">${gbp(r.earned)}</td><td class="n">${r.toAccelerator ? gbpK(r.toAccelerator) : "Reached"}</td><td class="n">${gbpK(r.pipeline)} <span class="sub">(${r.dealCount})</span></td>
+        <td class="n">${gbp(r.expected)}</td><td class="n">${gbp(r.potential)}</td><td class="n" style="color:var(${r.atRisk ? "--bad" : "--muted"})">${gbp(r.atRisk)}</td>
+        <td><button type="button" class="linkbtn small" data-review="${esc(r.owner)}">${r.owner === keep ? "Reviewing" : "Review deals"}</button></td></tr>`).join("") + "</tbody>";
+    $("planTable").innerHTML = `<thead><tr><th>Deal type</th><th class="n">Base rate</th><th class="n">Above quota</th></tr></thead><tbody>` +
+      Object.entries(com.plan.rates).map(([k, r]) => `<tr><td>${k}</td><td class="n">${pct1(r)}</td><td class="n">${pct1(r * com.plan.accelerator)}</td></tr>`).join("") +
+      `<tr><td>Manager override</td><td class="n" colspan="2">${pct1(com.plan.managerOverride)} of team closed won</td></tr>` +
+      `<tr><td>Rep quotas</td><td colspan="2" class="sub">Set by team and tenure: ${gbpK(Math.min(...com.reps.map((r) => r.quota)))} to ${gbpK(Math.max(...com.reps.map((r) => r.quota)))}</td></tr></tbody>`;
+    pick.innerHTML = owners.map((o) => `<option${o === keep ? " selected" : ""}>${esc(o)}</option>`).join("");
+    const rd = h.deals.filter((d) => d.owner === keep).sort((a, b) => com.byDeal[b.id].expected - com.byDeal[a.id].expected);
+    $("repDealHead").textContent = `${keep} · ${E.repOf(keep).team} · ${rd.length} open deals, highest expected commission first`;
+    $("repDealTable").innerHTML = `<thead><tr><th>Deal</th><th>Stage</th><th class="n">Amount</th><th class="n">Rate</th><th class="n">If won</th><th class="n">Expected</th><th>Lands</th><th>Top next step</th></tr></thead><tbody>` +
+      rd.map((d) => { const cm = com.byDeal[d.id];
+        return `<tr><td><div>${esc(d.account)}</div><div class="sub">${esc(d.type)}</div></td><td>${d.stage}<div class="sub">${pct(E.stageOf(d.stage).prob)} prob.</div></td>
+        <td class="n">${d.amount ? gbp(d.amount) : "–"}</td><td class="n">${pct1(cm.rate)}</td><td class="n">${gbp(cm.ifWon)}${cm.accelerated ? `<div class="sub">accelerated</div>` : ""}</td><td class="n">${gbp(cm.expected)}</td>
+        <td>${cm.inPeriod ? "Q4" : `<span class="sub">Next quarter</span>`}${cm.flagged ? ` <span class="chip">flagged</span>` : ""}</td>
+        <td style="min-width:240px">${d.steps.length ? priTag(d.steps[0].priority) + esc(d.steps[0].text) : `<span class="sub">None</span>`}</td></tr>`; }).join("") + "</tbody>";
+  }
+
+  // ---------- Metrics ----------
+  const last = M[M.length - 1], prev = M[M.length - 2];
+  const fmtDays = (v) => Math.round(v) + " d", fmtMo = (v) => v.toFixed(1) + " mo", fmtR = (v) => v.toFixed(2);
+  const SERIES = {
+    arr: { label: "ARR", rows: M.map((m, i) => [i, m.arr]), fmt: gbpM, unit: (v) => gbpK(v), up: true },
+    bookings: { label: "Bookings (new + expansion)", rows: M.map((m, i) => [i, m.bookings]), fmt: gbpK, unit: gbpK, up: true },
+    nrr: { label: "NRR (TTM)", rows: M.map((m, i) => [i, m.nrr]).filter((r) => r[1] != null), fmt: pct1, unit: (v) => (v * 100).toFixed(1) + " pts", up: true, key: "nrr" },
+    grr: { label: "GRR (TTM)", rows: M.map((m, i) => [i, m.grr]).filter((r) => r[1] != null), fmt: pct1, unit: (v) => (v * 100).toFixed(1) + " pts", up: true, key: "grr" },
+    winRate: { label: "Win rate", rows: WR.map((w, k) => [4 + k, w.rate]), fmt: pct, unit: (v) => (v * 100).toFixed(1) + " pts", up: true, key: "winRate" },
+    cycle: { label: "Sales cycle (median days)", rows: WR.map((w, k) => [4 + k, w.cycleMedian]), fmt: fmtDays, unit: (v) => v.toFixed(1) + " days", up: false },
+    payback: { label: "CAC payback (months)", rows: M.map((m, i) => [i, m.payback]).filter((r) => r[1] != null), fmt: fmtMo, unit: (v) => v.toFixed(1) + " months", up: false, key: "payback" },
+    magic: { label: "Net magic number", rows: M.map((m, i) => [i, m.magic]).filter((r) => r[1] != null), fmt: fmtR, unit: fmtR, up: true, key: "magic" },
+    ruleOf40: { label: "Rule of 40", rows: M.map((m, i) => [i, m.ruleOf40]).filter((r) => r[1] != null), fmt: pct, unit: (v) => (v * 100).toFixed(1) + " pts", up: true, key: "ruleOf40" },
+  };
+
+  function renderKpis(c) {
+    const vel = E.pipelineVelocity(deals, TTM_WR, TTM_CYCLE);
+    const fa = M.slice(-4).reduce((a, m) => a + m.forecastAcc, 0) / 4;
+    const w = WR[WR.length - 1], wp = WR[WR.length - 2];
+    const why = (key, v, f) => { const b = E.BENCH[key], lv = E.rate(key, v);
+      return b.up ? (lv === "good" ? `${f(b.good)} or more is healthy` : lv === "warn" ? `Below the ${f(b.good)} healthy mark` : `Below ${f(b.ok)}`) : (lv === "good" ? `${f(b.good)} or less is healthy` : lv === "warn" ? `Above the ${f(b.good)} healthy mark` : `Above ${f(b.ok)}`); };
+    const tiles = [
+      ["ARR", gbpM(last.arr), last.arr > prev.arr ? "good" : "bad", sgn(last.arr / prev.arr - 1, pct1) + " QoQ", M.map((m) => m.arr), last.arr > prev.arr ? "Growing quarter on quarter" : "Shrinking quarter on quarter"],
+      ["NRR", pct1(last.nrr), E.rate("nrr", last.nrr), sgn(last.nrr - prev.nrr, (v) => (v * 100).toFixed(1) + " pts"), M.filter((m) => m.nrr).map((m) => m.nrr), why("nrr", last.nrr, pct)],
+      ["GRR", pct1(last.grr), E.rate("grr", last.grr), sgn(last.grr - prev.grr, (v) => (v * 100).toFixed(1) + " pts"), M.filter((m) => m.grr).map((m) => m.grr), why("grr", last.grr, pct)],
+      ["Win rate (TTM)", pct1(TTM_WR), E.rate("winRate", TTM_WR), "Last quarter " + pct(w.rate), WR.map((r) => r.rate), why("winRate", TTM_WR, pct)],
+      ["Sales cycle", Math.round(TTM_CYCLE) + " days", TTM_CYCLE <= 90 ? "good" : TTM_CYCLE <= 120 ? "warn" : "bad", sgn(w.cycleMedian - wp.cycleMedian, (v) => Math.round(v) + " days") + " QoQ", WR.map((r) => r.cycleMedian), TTM_CYCLE <= 90 ? "90 days or less is healthy" : TTM_CYCLE <= 120 ? "Above the 90-day healthy mark" : "Above 120 days"],
+      ["CAC payback", fmtMo(last.payback), E.rate("payback", last.payback), sgn(last.payback - prev.payback, (v) => v.toFixed(1) + " mo"), M.filter((m) => m.payback).map((m) => m.payback), (E.rate("payback", last.payback) === "good" ? "18 months or less is healthy" : E.rate("payback", last.payback) === "warn" ? "Above the 18-month healthy mark" : "Above 30 months")],
+      ["Net magic number", fmtR(last.magic), E.rate("magic", last.magic), sgn(last.magic - prev.magic, fmtR), M.filter((m) => m.magic).map((m) => m.magic), why("magic", last.magic, fmtR)],
+      ["Rule of 40", pct1(last.ruleOf40), E.rate("ruleOf40", last.ruleOf40), "Growth " + pct(last.revGrowth) + " + FCF " + pct(last.fcfMargin), M.filter((m) => m.ruleOf40 != null).map((m) => m.ruleOf40), why("ruleOf40", last.ruleOf40, pct)],
+      ["Forecast accuracy", pct1(fa), E.rate("forecastAcc", fa), "Average of last 4 quarters", M.map((m) => m.forecastAcc), why("forecastAcc", fa, pct)],
+      ["Pipeline velocity", gbp(vel.perDay) + "/day", "info", gbpK(vel.perDay * 30) + " a month", null, "No standard benchmark: judge it against its own trend"],
+    ];
+    $("kpis").innerHTML = tiles.map(([k, v, lv, d, sp, wy]) => `<div class="kpi"><div class="row"><span class="k">${k}</span>${pill(lv, lv === "info" ? "Info" : undefined)}</div><div class="v">${v}</div><div class="d">${d}</div>${sp ? spark(sp, lv) : ""}<div class="why w-${lv}">${wy}</div></div>`).join("");
+  }
+
+  function renderProjection() {
+    const key = $("projPick").value, S = SERIES[key];
+    const rows = S.rows.slice(-8), ys = rows.map((r) => r[1]);
+    const tr = E.linearTrend(ys, 4);
+    const lastIdx = rows[rows.length - 1][0];
+    const labels = rows.map((r) => E.qLabel(r[0])).concat([1, 2, 3, 4].map((k) => E.qLabel(lastIdx + k)));
+    $("projChart").innerHTML = lineChart({ labels, values: ys, trend: tr, fmt: S.fmt });
+    $("projSub").textContent = S.label + ", last " + rows.length + " quarters and four projected";
+    $("projLegend").innerHTML = `<span class="keys"><span style="--c:var(--accent)">Actual</span><span style="--c:var(--muted)">Trend line</span><span style="--c:color-mix(in srgb, var(--accent) 25%, var(--surface))">95% range</span></span>`;
+    const end = tr.projection[3], dir = tr.slope > 0 === S.up ? "good" : "bad";
+    const flat = Math.abs(tr.slope) < Math.abs(tr.intercept) * 0.003;
+    $("projText").innerHTML = `${pill(flat ? "warn" : dir, flat ? "Flat" : dir === "good" ? "Improving" : "Worsening")} ${flat ? "Roughly flat" : "Trend " + sgn(tr.slope, S.unit) + " a quarter"} (R² ${tr.r2.toFixed(2)}). On this line ${S.label.split(" (")[0]} reaches <b class="mono">${S.fmt(end.y)}</b> by ${E.qLabel(lastIdx + 4)}, likely between <span class="mono">${S.fmt(end.lo)}</span> and <span class="mono">${S.fmt(end.hi)}</span>.` +
+      (S.key ? ` Benchmark: ${S.up ? "above" : "below"} ${S.fmt(E.BENCH[S.key].good)} is healthy.` : "") + (tr.r2 < 0.5 ? " The fit is loose, so treat the direction as a hint, not a forecast." : "");
+  }
+
+  function renderMetrics(c) {
+    renderKpis(c);
+    // Bridge
+    const B = M.slice(-8);
+    $("bridgeTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">Start ARR</th><th class="n">New</th><th class="n">Expansion</th><th class="n">Contraction</th><th class="n">Churn</th><th class="n">End ARR</th><th class="n">GRR</th><th class="n">NRR</th></tr></thead><tbody>` +
+      B.map((m) => `<tr><td>${m.label}</td><td class="n">${gbpM(m.arr - m.netNew)}</td><td class="n">${gbpK(m.newArr)}</td><td class="n">${gbpK(m.expansion)}</td><td class="n">−${gbpK(m.contraction)}</td><td class="n">−${gbpK(m.churn)}</td><td class="n">${gbpM(m.arr)}</td>
+        <td class="n"><span class="pill st-${E.rate("grr", m.grr)}">${pct1(m.grr)}</span></td><td class="n"><span class="pill st-${E.rate("nrr", m.nrr)}">${pct1(m.nrr)}</span></td></tr>`).join("") + "</tbody>";
+    // Expansion velocity
+    $("expLevers").innerHTML = [[gbpK(last.expansionPerMonth), "Expansion ARR per month (TTM)"], [pct1(last.expansionRate), "Of starting base, per year"], [sgn(last.expansionQoQ, pct1), "Expansion bookings QoQ"]].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}</span></div>`).join("");
+    const er = M.filter((m) => m.expansionPerMonth);
+    $("expChart").innerHTML = lineChart({ labels: er.map((m) => m.label), values: er.map((m) => m.expansionPerMonth), fmt: gbpK, H: 200 });
+    // Renewals
+    $("renewTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">Due</th><th class="n">Forecast</th><th class="n">Renewed</th><th class="n">Accuracy</th></tr></thead><tbody>` +
+      M.slice(-6).map((m) => `<tr><td>${m.label}</td><td class="n">${gbpM(m.renewDue)}</td><td class="n">${gbpM(m.renewForecast)}</td><td class="n">${gbpM(m.renewActual)}</td><td class="n"><span class="pill st-${E.rate("renewAcc", m.renewAcc)}">${pct1(m.renewAcc)}</span></td></tr>`).join("") + "</tbody>";
+    // Cohorts
+    const CS = E.cohortSummary(hist.cohorts), ages = CS.length - 1;
+    $("cohortFacts").innerHTML = [[1, "After 1 quarter"], [4, "After 1 year"], [8, "After 2 years"]].map(([ag, k]) => { const r = CS[ag];
+      return `<div><span class="k">${k}</span><span class="v">${r && r.retained != null ? pct(r.retained) : "–"}</span><span class="note">of customers still active, across ${r ? r.cohorts : 0} cohorts</span></div>`; }).join("");
+    const cell = (v) => { const k = Math.max(0, Math.min(100, ((v - 0.55) / 0.45) * 100)); return `<td style="background:color-mix(in srgb, var(--accent) ${Math.round(k * 0.85)}%, var(--surface));color:var(${k > 55 ? "--surface" : "--ink"})">${pct(v)}</td>`; };
+    $("cohortTable").innerHTML = `<thead><tr><th class="lbl">Signed in</th><th class="n">Customers signed</th><th class="n">Still active</th>${Array.from({ length: ages }, (_, i) => `<th class="n">+${i + 1}q</th>`).join("")}</tr></thead><tbody>` +
+      hist.cohorts.map((co) => { const now = co.ret[co.ret.length - 1];
+        return `<tr><td class="lbl">${co.label}</td><td class="n">${co.logos}</td><td class="n">${Math.round(co.logos * now)} <span class="sub">(${pct(now)})</span></td>${Array.from({ length: ages }, (_, i) => (i + 1 < co.ret.length ? cell(co.ret[i + 1]) : "<td></td>")).join("")}</tr>`; }).join("") +
+      `<tr class="avg"><td class="lbl"><b>Weighted average</b></td><td class="n">${hist.cohorts.reduce((x, co) => x + co.logos, 0)}</td><td></td>${Array.from({ length: ages }, (_, i) => (CS[i + 1].retained != null ? cell(CS[i + 1].retained) : "<td></td>")).join("")}</tr></tbody>`;
+    // Velocity
+    const vel = E.pipelineVelocity(deals, TTM_WR, TTM_CYCLE);
+    $("velLevers").innerHTML = [[vel.opps, "Qualified open deals"], [gbpK(vel.avgDeal), "Average deal"], [pct1(vel.winRate), "Win rate (TTM)"], [Math.round(vel.cycleDays) + " days", "Cycle (TTM median)"]].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}</span></div>`).join("");
+    const plus = E.pipelineVelocity(deals, TTM_WR + 0.05, TTM_CYCLE).perDay;
+    const faster = E.pipelineVelocity(deals, TTM_WR, TTM_CYCLE * 0.9).perDay;
+    $("velText").innerHTML = `<b class="mono">${gbp(vel.perDay)}</b> a day. Five points more win rate adds ${gbp(plus - vel.perDay)}/day; a cycle 10% shorter adds ${gbp(faster - vel.perDay)}/day.`;
+    // Coverage table
+    const q4 = E.coverage(deals, c);
+    const q1 = E.coverage(deals, { ...c, periodStart: "2027-01-01", periodEnd: "2027-03-31", closedWon: 0 });
+    $("covTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">Pipeline</th><th class="n">Raw</th><th class="n">Clean</th><th class="n">Needed</th></tr></thead><tbody>
+      <tr><td>Q4 FY26 <span class="sub">(${q4.inPeriodCount} deals)</span></td><td class="n">${gbpK(q4.raw)}</td><td class="n">${x(q4.rawCoverage)}</td><td class="n">${x(q4.cleanCoverage)}</td><td class="n">${x(q4.required)}</td></tr>
+      <tr><td>Q1 FY27 <span class="sub">(${q1.inPeriodCount} deals so far)</span></td><td class="n">${gbpK(q1.raw)}</td><td class="n">${x(q1.rawCoverage)}</td><td class="n">${x(q1.cleanCoverage)}</td><td class="n">${x(q1.required)}</td></tr></tbody>`;
+    // Funnel
+    const F = E.funnel(opps);
+    $("funnelTable").innerHTML = `<thead><tr><th>From</th><th>To</th><th class="n">Reached</th><th style="min-width:120px">Conversion</th></tr></thead><tbody>` +
+      F.map((f) => `<tr><td>${f.stage}</td><td>${f.nextLabel}</td><td class="n">${f.count}</td><td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span style="width:${f.conversion * 100}%"></span></div><span class="num">${pct(f.conversion)}</span></div></td></tr>`).join("") +
+      `<tr><td colspan="2"><b>Discovery to won</b></td><td class="n">${F[4].next}</td><td class="num">${pct1(F[4].next / F[0].count)}</td></tr></tbody>`;
+    // Time in stage
+    $("tisTable").innerHTML = `<thead><tr><th>Stage</th><th class="n">History avg</th><th class="n">Median</th><th class="n">Open deals avg</th><th class="n">Limit</th></tr></thead><tbody>` +
+      E.timeInStage(opps, deals, AS_OF).map((t) => `<tr><td>${t.stage}</td><td class="n">${Math.round(t.avg)} d</td><td class="n">${Math.round(t.median)} d</td><td class="n">${t.openAvg == null ? "–" : Math.round(t.openAvg) + " d"} <span class="sub">(${t.openCount})</span></td><td class="n">${t.limit} d</td></tr>`).join("") + "</tbody>";
+    // Win rate and cycle
+    $("winTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">Closed</th><th class="n">Won</th><th class="n">Win rate (count)</th><th class="n">Win rate (value)</th><th class="n">Avg won deal</th><th class="n">Cycle (median)</th></tr></thead><tbody>` +
+      WR.map((w) => `<tr><td>${w.label}</td><td class="n">${w.closed}</td><td class="n">${w.won}</td><td class="n"><span class="pill st-${E.rate("winRate", w.rate)}">${pct1(w.rate)}</span></td><td class="n">${pct1(w.valueRate)}</td><td class="n">${gbpK(w.avgWon)}</td><td class="n">${Math.round(w.cycleMedian)} d</td></tr>`).join("") + "</tbody>";
+    // Forecast vs actuals
+    const FV = M.slice(-8);
+    $("fvaChart").innerHTML = barPairs({ labels: FV.map((m) => m.label), a: FV.map((m) => m.forecast), b: FV.map((m) => m.bookings), fmt: gbpK });
+    $("fvaTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">Call</th><th class="n">Actual</th><th class="n">Accuracy</th><th class="n">Bias</th></tr></thead><tbody>` +
+      FV.map((m) => `<tr><td>${m.label}</td><td class="n">${gbpK(m.forecast)}</td><td class="n">${gbpK(m.bookings)}</td><td class="n"><span class="pill st-${E.rate("forecastAcc", m.forecastAcc)}">${pct1(m.forecastAcc)}</span></td><td class="n">${sgn(m.forecastBias, pct1)} <span class="sub">${m.forecastBias < -0.03 ? "sandbagged" : m.forecastBias > 0.03 ? "over-called" : "on target"}</span></td></tr>`).join("") + "</tbody>";
+    // Efficiency
+    $("effTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">S&amp;M (prior q)</th><th class="n">Net new ARR</th><th class="n">Gross margin</th><th class="n">CAC payback</th><th class="n">Net magic no.</th><th class="n">Revenue growth</th><th class="n">FCF margin</th><th class="n">Rule of 40</th></tr></thead><tbody>` +
+      M.slice(-7).map((m) => { const i = M.indexOf(m);
+        return `<tr><td>${m.label}</td><td class="n">${gbpK(M[i - 1].sm)}</td><td class="n">${gbpK(m.netNew)}</td><td class="n">${pct(m.gm)}</td>
+        <td class="n"><span class="pill st-${E.rate("payback", m.payback)}">${fmtMo(m.payback)}</span></td><td class="n"><span class="pill st-${E.rate("magic", m.magic)}">${fmtR(m.magic)}</span></td>
+        <td class="n">${pct1(m.revGrowth)}</td><td class="n">${sgn(m.fcfMargin, pct1)}</td><td class="n"><span class="pill st-${E.rate("ruleOf40", m.ruleOf40)}">${pct1(m.ruleOf40)}</span></td></tr>`; }).join("") + "</tbody>";
+    // Deal desk
+    const dd = deals.map((d) => ({ d, x: E.dealDesk(d) }));
+    const queue = dd.filter((r) => r.x.inQueue);
+    const discounted = deals.filter((d) => d.discount > 0);
+    $("ddFacts").innerHTML = [
+      [queue.length, "Deals waiting on sign-off"], [gbpK(queue.reduce((a, r) => a + r.d.amount, 0)), "Value in the queue"],
+      [pct1(discounted.reduce((a, d) => a + d.discount * d.amount, 0) / (discounted.reduce((a, d) => a + d.amount, 0) || 1)), "Value-weighted average discount"],
+      [deals.filter((d) => d.discount > 0.20).length, "Deals over 20% discount"], [deals.filter((d) => d.nonStandard).length, "Non-standard terms requested"],
+    ].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}</span></div>`).join("");
+    $("ddQueue").innerHTML = `<thead><tr><th>Deal</th><th>Stage</th><th class="n">Amount</th><th class="n">Discount</th><th>Terms</th><th>Approver</th><th>Status</th><th>Action</th></tr></thead><tbody>` +
+      (queue.length ? queue.map(({ d, x: q }) => `<tr><td><div>${esc(d.account)}</div><div class="sub">${esc(d.owner)}</div></td><td>${d.stage}</td><td class="n">${gbpK(d.amount)}</td><td class="n">${pct(d.discount)}</td><td>${esc(d.nonStandard || "Standard")}</td><td>${q.approver}</td><td><span class="pill st-${d.approval === "Pending" ? "warn" : "bad"}">${d.approval}</span></td><td style="min-width:220px">${priTag(q.action.priority)}${esc(q.action.text)}</td></tr>`).join("")
+        : `<tr><td colspan="8" class="sub">Nothing waiting.</td></tr>`) + "</tbody>";
+    $("ddMatrix").innerHTML = `<thead><tr><th>Discount</th><th>Approver</th><th class="n">Open deals</th></tr></thead><tbody>` +
+      E.DISCOUNT_TIERS.map((t, i, a) => { const lo = i ? a[i - 1].max : 0; const n = deals.filter((d) => (i ? d.discount > lo + 1e-9 : true) && d.discount <= t.max + 1e-9).length;
+        return `<tr><td>${i ? "Over " + pct(lo) + (t.max < 1 ? " to " + pct(t.max) : "") : "Up to " + pct(t.max)}</td><td>${t.approver}</td><td class="n">${n}</td></tr>`; }).join("") +
+      `<tr><td>Non-standard terms</td><td>Deal desk or above</td><td class="n">${deals.filter((d) => d.nonStandard).length}</td></tr></tbody>`;
+    $("ddBands").innerHTML = `<thead><tr><th>Discount</th><th class="n">Deals</th><th style="min-width:120px">Win rate</th></tr></thead><tbody>` +
+      E.discountBands(opps).map((b) => `<tr><td>${b.label}</td><td class="n">${b.deals}</td><td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span style="width:${b.winRate * 100}%"></span></div><span class="num">${pct(b.winRate)}</span></div></td></tr>`).join("") + "</tbody>";
+    // MEDDPICC
+    const head = `<th class="lbl">Stage</th>${E.MEDDPICC.map((m) => `<th class="n" title="${m.name}">${m.key}<div class="sub" style="text-transform:none;letter-spacing:0;font-weight:400">${m.name.split(" ")[0]}</div></th>`).join("")}`;
+    const byStage = E.meddpiccByStage(deals);
+    $("mReq").innerHTML = `<thead><tr>${head}<th class="n">Open deals</th><th class="n">With gaps</th></tr></thead><tbody>` +
+      E.STAGES.map((s, si) => `<tr><td class="lbl">${s.name}</td>${E.MEDDPICC_REQ[s.name].map((q) => `<td>${q ? `<span class="mp mp-${q}">${q}</span>` : `<span class="req-cell">–</span>`}</td>`).join("")}<td class="n">${byStage[si].deals}</td><td class="n">${byStage[si].gapDeals}</td></tr>`).join("") + "</tbody>";
+    const late = deals.filter((d) => E.stageIndex(d.stage) >= 2).sort((a, b) => E.stageIndex(b.stage) - E.stageIndex(a.stage) || b.amount - a.amount);
+    $("mDeals").innerHTML = `<thead><tr><th class="lbl">Deal</th>${E.MEDDPICC.map((m) => `<th class="n" title="${m.name}">${m.key}</th>`).join("")}<th class="n">Score</th></tr></thead><tbody>` +
+      late.map((d) => { const req = E.MEDDPICC_REQ[d.stage];
+        return `<tr><td class="lbl"><div>${esc(d.account)}</div><div class="sub">${d.stage} · ${gbpK(d.amount)}</div></td>${d.meddpicc.map((v, i) => `<td><span class="mp mp-${v}${v < req[i] ? " gap" : ""}" title="${E.MEDDPICC[i].name}: ${v}, stage needs ${req[i]}">${v}</span></td>`).join("")}<td class="n">${d.meddpicc.reduce((a, b) => a + b, 0)}/16</td></tr>`; }).join("") + "</tbody>";
+  }
+
+
+  // ---------- FY26 full year ----------
+  const FY_QUOTA = [1600000, 1600000, 1750000]; // Q1-Q3 FY26 quotas (illustrative)
+  function renderFullYear(c, l) {
+    const hq = M.slice(-3); // Q1-Q3 FY26
+    const qs = hq.map((m, i) => ({ label: m.label, quota: FY_QUOTA[i], booked: m.bookings, call: m.forecast, likely: m.bookings, done: true, nrr: m.nrr, grr: m.grr }));
+    qs.push({ label: "Q4 FY26", quota: c.quota, booked: c.closedWon, likely: l.likely, floor: l.floor, stretch: l.stretch, done: false });
+    const fyQuota = qs.reduce((a, q) => a + q.quota, 0), ytd = qs.reduce((a, q) => a + q.booked, 0);
+    const prior = hq.reduce((a, m) => a + m.bookings, 0), fyLikely = prior + l.likely, fyFloor = prior + l.floor, fyStretch = prior + l.stretch;
+    $("fyFacts").innerHTML = factsHtml([["FY26 quota", gbpK(fyQuota), "four quarters"], ["Booked so far", gbpK(ytd), pct(ytd / fyQuota) + " of the year"],
+      ["Full-year likely", gbpK(fyLikely), pct(fyLikely / fyQuota) + " of quota"], ["Full-year range", gbpK(fyFloor) + " – " + gbpK(fyStretch), pct(fyFloor / fyQuota) + " to " + pct(fyStretch / fyQuota)]]);
+    const W = 720, H = 250, L = 58, R = 12, T = 14, B = 30;
+    const top = niceTicks(0, Math.max(...qs.map((q) => Math.max(q.quota, q.stretch || q.booked))) * 1.05), t1 = top[top.length - 1];
+    const Y = (v) => T + (H - T - B) * (1 - v / t1), slot = (W - L - R) / 4, bw = slot * 0.46;
+    let sv = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="FY26 bookings by quarter against quota">`;
+    for (const t of top) sv += `<line x1="${L}" x2="${W - R}" y1="${Y(t)}" y2="${Y(t)}" style="stroke:var(--line)"/><text x="${L - 8}" y="${Y(t) + 4}" text-anchor="end">${gbpK(t)}</text>`;
+    qs.forEach((q, i) => { const x = L + slot * i + (slot - bw) / 2;
+      if (!q.done) { sv += `<rect x="${x}" y="${Y(q.likely)}" width="${bw}" height="${Y(q.booked) - Y(q.likely)}" rx="3" style="fill:color-mix(in srgb, var(--accent) 35%, var(--surface))"><title>Q4 likely ${gbpK(q.likely)}</title></rect>`;
+        sv += `<line x1="${x + bw / 2}" x2="${x + bw / 2}" y1="${Y(q.stretch)}" y2="${Y(q.floor)}" style="stroke:var(--ink)" stroke-width="1.5"/><line x1="${x + bw / 2 - 6}" x2="${x + bw / 2 + 6}" y1="${Y(q.stretch)}" y2="${Y(q.stretch)}" style="stroke:var(--ink)" stroke-width="1.5"/><line x1="${x + bw / 2 - 6}" x2="${x + bw / 2 + 6}" y1="${Y(q.floor)}" y2="${Y(q.floor)}" style="stroke:var(--ink)" stroke-width="1.5"/>`; }
+      sv += `<rect x="${x}" y="${Y(q.booked)}" width="${bw}" height="${Y(0) - Y(q.booked)}" rx="3" style="fill:var(--accent)"><title>${q.label} booked ${gbpK(q.booked)}</title></rect>`;
+      sv += `<line x1="${x - 8}" x2="${x + bw + 8}" y1="${Y(q.quota)}" y2="${Y(q.quota)}" style="stroke:var(--ink)" stroke-width="2.5"/>`;
+      sv += `<text x="${x + bw / 2}" y="${H - 10}" text-anchor="middle">${q.label}${q.done ? "" : " (in progress)"}</text>`; });
+    $("fyChart").innerHTML = sv + "</svg>";
+    $("fyTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">Quota</th><th class="n">Forecast call</th><th class="n">Booked</th><th class="n">Attainment</th><th class="n">Forecast accuracy</th><th class="n">NRR (TTM)</th></tr></thead><tbody>` +
+      qs.map((q) => q.done ? `<tr><td>${q.label}</td><td class="n">${gbpK(q.quota)}</td><td class="n">${gbpK(q.call)}</td><td class="n">${gbpK(q.booked)}</td><td class="n"><span class="pill st-${q.booked / q.quota >= 1 ? "good" : q.booked / q.quota >= 0.9 ? "warn" : "bad"}">${pct(q.booked / q.quota)}</span></td><td class="n">${pct1(1 - Math.abs(q.booked - q.call) / q.booked)}</td><td class="n">${pct1(q.nrr)}</td></tr>`
+        : `<tr><td>${q.label} <span class="pill st-warn">In progress</span></td><td class="n">${gbpK(q.quota)}</td><td class="n">–</td><td class="n">${gbpK(q.booked)} <span class="sub">likely ${gbpK(q.likely)}</span></td><td class="n"><span class="pill st-${l.likelyPct >= 1 ? "good" : l.likelyPct >= 0.9 ? "warn" : "bad"}">${pct(l.likelyPct)} likely</span></td><td class="n">–</td><td class="n">${pct1(last.nrr)}</td></tr>`).join("") +
+      `<tr class="avg"><td><b>FY26</b></td><td class="n"><b>${gbpK(fyQuota)}</b></td><td></td><td class="n"><b>${gbpK(ytd)}</b> <span class="sub">likely ${gbpK(fyLikely)}</span></td><td class="n"><span class="pill st-${fyLikely / fyQuota >= 1 ? "good" : fyLikely / fyQuota >= 0.9 ? "warn" : "bad"}">${pct(fyLikely / fyQuota)} likely</span></td><td></td><td></td></tr></tbody>`;
+    const best = Math.max(...hq.map((m) => m.bookings)), jump = l.likely / best - 1, ly = M[M.length - 4].bookings;
+    $("fyText").innerHTML = `Q1 to Q3 averaged ${pct(prior / (FY_QUOTA[0] + FY_QUOTA[1] + FY_QUOTA[2]))} of quota. The likely Q4 of ${gbpK(l.likely)} would be ${jump > 0 ? "a record quarter, " + pct(jump) + " above the best so far" : pct(-jump) + " below the best quarter so far"} and ${pct(l.likely / ly - 1)} up on Q4 last year. ${jump > 0.15 ? "A jump that size is the clearest reason to pressure-test the Commit calls before the forecast meeting." : ""}`;
+    return { fyQuota, fyLikely, ytd, jump };
+  }
+
+  // ---------- Executive summary ----------
+  const FA = M.slice(-4).reduce((a, m) => a + m.forecastAcc, 0) / 4;
+  const tenureFmt = (m) => (m >= 12 ? Math.floor(m / 12) + "y " + (m % 12) + "m" : m + "m");
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthYear = (iso) => MON[+iso.slice(5, 7) - 1] + " " + iso.slice(0, 4);
+  const STATUS = { good: "On track", warn: "Watch", bad: "Needs support" };
+  const SUGGEST = {
+    land: "Review Best Case deals for any that can come into the quarter with a confirmed paper process.",
+    coverage: "Protect a weekly prospecting block for each rep and look for next-quarter deals that could close earlier.",
+    hygiene: "Run a 30-minute pipeline scrub with each rep this week, working from the next-steps list.",
+    tenure: "Pair the reps behind for tenure with a top performer for weekly deal reviews.",
+  };
+  function landChart(l) {
+    const W = 720, H = 128, L = 14, R = 14, y = 46, bh = 26;
+    const top = Math.max(l.stretch, l.quota) * 1.06, X = (v) => L + (v / top) * (W - L - R);
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Landing range against quota">`;
+    s += `<rect x="${X(0)}" y="${y}" width="${X(top) - X(0)}" height="${bh}" rx="5" style="fill:var(--bg)"/>`;
+    s += `<rect x="${X(l.floor)}" y="${y}" width="${Math.max(2, X(l.stretch) - X(l.floor))}" height="${bh}" rx="5" style="fill:color-mix(in srgb, var(--accent) 24%, var(--surface))"/>`;
+    s += `<rect x="${X(0)}" y="${y}" width="${X(l.closed) - X(0)}" height="${bh}" rx="5" style="fill:var(--accent)"/>`;
+    s += `<text x="${X(0) + 10}" y="${y + 17}" style="fill:var(--surface);font-weight:600">Closed ${gbpK(l.closed)}</text>`;
+    s += `<line x1="${X(l.quota)}" x2="${X(l.quota)}" y1="${y - 16}" y2="${y + bh + 6}" style="stroke:var(--bad)" stroke-width="2" stroke-dasharray="4 3"/>`;
+    s += `<text x="${X(l.quota)}" y="${y - 22}" text-anchor="middle" style="fill:var(--bad);font-weight:600">Quota ${gbpK(l.quota)}</text>`;
+    s += `<line x1="${X(l.likely)}" x2="${X(l.likely)}" y1="${y - 6}" y2="${y + bh + 8}" style="stroke:var(--ink)" stroke-width="3"/>`;
+    s += `<text x="${X(l.likely)}" y="${y + bh + 24}" text-anchor="middle" style="fill:var(--ink);font-weight:600">Likely ${gbpK(l.likely)}</text>`;
+    if (Math.abs(X(l.floor) - X(l.likely)) > 90) s += `<text x="${X(l.floor)}" y="${y + bh + 24}" text-anchor="middle" style="fill:var(--muted)">Floor ${gbpK(l.floor)}</text>`;
+    if (Math.abs(X(l.stretch) - X(l.likely)) > 90) s += `<text x="${Math.min(X(l.stretch), W - 50)}" y="${y + bh + 24}" text-anchor="middle" style="fill:var(--muted)">Stretch ${gbpK(l.stretch)}</text>`;
+    return s + "</svg>";
+  }
+  function renderSummary(c, h, cv, teams, MR, CP) {
+    const l = E.landing(deals, c), cf = E.confidence(deals, c, FA);
+    const lvl = l.likelyPct >= 1 ? "good" : l.likelyPct >= 0.9 ? "warn" : "bad";
+    $("sumVerdict").className = "verdict lv-" + lvl;
+    $("sumVerdict").innerHTML = `<span class="pill">${{ good: "On track", warn: "Just short", bad: "Off track" }[lvl]}</span><span>We're at ${pct1(cv.attainmentToDate)} of quota with ${cv.daysLeft} days left. Likely to land at ${gbpK(l.likely)} (${pct(l.likelyPct)} of quota), somewhere between ${gbpK(l.floor)} and ${gbpK(l.stretch)}. Pipeline confidence is ${cf.level.toLowerCase()} at ${cf.score}/100.</span>`;
+    const gapL = c.quota - l.likely;
+    $("sumFacts").innerHTML = [
+      ["Quota", gbpK(c.quota), "Q4 FY26, " + E.OWNERS.length + " reps"],
+      ["Closed won", gbpK(c.closedWon), pct1(cv.attainmentToDate) + " of quota"],
+      ["Likely landing", gbpK(l.likely), pct(l.likelyPct) + " of quota"],
+      [gapL > 0 ? "Short at likely" : "Over at likely", gbpK(Math.abs(gapL)), gapL > 0 ? "still to find or pull in" : "ahead of quota"],
+      ["Pipeline confidence", cf.score + "/100", cf.level],
+      ["Days left", cv.daysLeft, "to 31 Dec 2026"],
+    ].map(([k, v, n]) => `<div><span class="k">${k}</span><span class="v">${v}</span><span class="note">${n}</span></div>`).join("");
+
+    $("landChart").innerHTML = landChart(l);
+    $("landTable").innerHTML = `<thead><tr><th>View</th><th class="n">Lands at</th><th class="n">Of quota</th><th>How it's worked out</th></tr></thead><tbody>
+      <tr><td>Floor</td><td class="n">${gbpK(l.floor)}</td><td class="n">${pct(l.floorPct)}</td><td class="sub">Closed won + clean Commit deals at ${pct(CAL.rates.Commit)}</td></tr>
+      <tr><td><b>Likely</b></td><td class="n"><b>${gbpK(l.likely)}</b></td><td class="n"><span class="pill st-${lvl}">${pct(l.likelyPct)}</span></td><td class="sub">Commit ${pct(CAL.rates.Commit)}, Best Case ${pct(CAL.rates["Best Case"])}, Pipeline ${pct(CAL.rates.Pipeline)}, calibrated from ${CAL.counts.Commit.deals + CAL.counts["Best Case"].deals + CAL.counts.Pipeline.deals} past deals; flagged deals halved</td></tr>
+      <tr><td>Stretch</td><td class="n">${gbpK(l.stretch)}</td><td class="n">${pct(l.stretchPct)}</td><td class="sub">Every Commit and Best Case deal closes</td></tr></tbody>`;
+
+    $("confBox").innerHTML = `<div class="conf"><div><span class="big">${cf.score}</span><span class="of">/100</span></div>${pill(cf.level === "High" ? "good" : cf.level === "Medium" ? "warn" : "bad", cf.level)}<div class="mini thick"><span class="${cf.score >= 75 ? "ok" : ""}" style="width:${cf.score}%"></span><i class="mark" style="left:55%" title="Medium from 55"></i><i class="mark" style="left:75%" title="High from 75"></i></div></div>`;
+    $("confTable").innerHTML = `<thead><tr><th>What it checks</th><th class="n">Weight</th><th style="min-width:110px">Score</th><th class="n">Points</th></tr></thead><tbody>` +
+      cf.parts.map((p) => `<tr><td>${p.label}</td><td class="n">${p.weight}</td><td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span class="${p.value >= 0.75 ? "ok" : ""}" style="width:${p.value * 100}%"></span></div><span class="num">${pct(p.value)}</span></div></td><td class="n">${(p.weight * p.value).toFixed(1)}</td></tr>`).join("") + "</tbody>";
+
+    // Weaknesses, each generated from a real figure.
+    const weak = [];
+    if (cv.verdict.level !== "good") weak.push([cv.verdict.level, `Coverage is ${x(cv.rawCoverage)} on paper but ${x(cv.cleanCoverage)} once flagged deals are removed, against ${x(cv.required)} needed.`]);
+    for (const t of teams.filter((t) => t.status !== "good").sort((a, b) => b.flags.length - a.flags.length)) weak.push([t.status, `${t.name} (${t.manager}): ${t.flags.map((f) => f.text.charAt(0).toLowerCase() + f.text.slice(1)).join("; ")}.`]);
+    const lateGaps = h.deals.filter((d) => E.stageIndex(d.stage) >= 3 && E.meddpiccGaps(d).length && d.closeDate <= P_END);
+    if (lateGaps.length) weak.push(["warn", `${lateGaps.length} Proposal or Negotiation deals closing this quarter (${gbpK(lateGaps.reduce((a, d) => a + d.amount, 0))}) are missing MEDDPICC evidence the stage needs.`]);
+    if (E.rate("grr", last.grr) !== "good") weak.push([E.rate("grr", last.grr), `Gross retention is ${pct1(last.grr)}, under the 90% mark; churn and contraction cost ${gbpK(M.slice(-4).reduce((a, m) => a + m.churn + m.contraction, 0))} of ARR in the last year.`]);
+    const q1 = E.coverage(deals, { ...c, periodStart: "2027-01-01", periodEnd: "2027-03-31", closedWon: 0 });
+    if (q1.rawCoverage < q1.required) weak.push(["warn", `Next quarter is thin: Q1 FY27 pipeline is ${x(q1.rawCoverage)} of quota so far, against ${x(q1.required)} needed.`]);
+    const ddq = deals.filter((d) => E.dealDesk(d).inQueue);
+    if (ddq.length) weak.push(["warn", `${ddq.length} late-stage deals (${gbpK(ddq.reduce((a, d) => a + d.amount, 0))}) are waiting on discount or terms sign-off.`]);
+    const slow = MR.bySdr.filter((x) => x.touchHours > 24);
+    for (const x of slow) weak.push(["bad", `${x.sdr} (${x.team}) takes a median ${Math.round(x.touchHours)} hours to first touch a new lead; the team median is ${Math.round(MR.touchHours)}.${x.staleNew ? " " + x.staleNew + " leads have waited more than two days." : ""} Slow first touch is a common reason for low MQL to SQL conversion.`]);
+    const weakMk = MR.byTeam.filter((t) => t.mqlToSql < 0.22);
+    for (const t of weakMk) weak.push(["warn", `${t.team} converts ${pct(t.mqlToSql)} of MQLs to SQL against ${pct(MR.funnel.mqlToSql)} overall, and dumps ${pct(t.disqualified / t.mql)} of its leads.`]);
+    if (RR.atRiskArr > 0) weak.push([RR.bands[2].accounts ? "bad" : "warn", `${gbpK(RR.atRiskArr)} of ARR renewing in the next six months is at risk or critical; forecast GRR on that book is ${pct1(RR.forecastGrr)}.`]);
+    const wq = WL.competitors.filter((x) => x.competitor !== "No competitor identified").sort((a, b) => a.winRate - b.winRate)[0];
+    if (wq.winRate < WL.overallWinRate - 0.05) weak.push(["warn", `We win ${pct(wq.winRate)} of deals against ${wq.competitor}, against ${pct(WL.overallWinRate)} overall.`]);
+    if (CP.gap > 0) weak.push(["warn", `FY27: the current team covers ${pct(CP.existing / CP.target)} of a ${gbpK(CP.target)} target; about ${CP.hiresNeeded ?? "40+"} hires starting in ${MON[+$("capMonth").value - 1]} would close it.`]);
+    $("weakList").innerHTML = weak.length ? weak.sort((a, b) => (a[0] === b[0] ? 0 : a[0] === "bad" ? -1 : b[0] === "bad" ? 1 : 0)).slice(0, 8).map(([lv, t]) => `<li>${pill(lv, lv === "bad" ? "Act" : "Watch")}<span>${esc(t)}</span></li>`).join("") : `<li>${pill("good")}<span>No material weaknesses on current figures.</span></li>`;
+
+    const FY = renderFullYear(c, l);
+    const crit = RENEW.filter((a) => a.band === "Critical"), cfGap = h.deals.filter((d) => d.forecastCategory === "Commit" && d.closeDate <= P_END && (d.flags.length || E.meddpiccGaps(d).length));
+    const ddq2 = deals.filter((d) => E.dealDesk(d).inQueue), support = teams.filter((t) => t.status === "bad");
+    const dec = [];
+    if (cfGap.length) dec.push(["bad", "Pressure-test Commit before the forecast call", `${cfGap.length} Commit deals (${gbpK(cfGap.reduce((a, d) => a + d.amount, 0))}) carry a hygiene issue or missing MEDDPICC evidence.`, "CRO with each manager", "hygiene"]);
+    if (ddq2.length) dec.push(["warn", "Clear the deal desk queue", `${ddq2.length} late-stage deals (${gbpK(ddq2.reduce((a, d) => a + d.amount, 0))}) are waiting on discount or terms sign-off.`, "Deal desk and CFO", "metrics"]);
+    for (const t of support) dec.push(["bad", `Agree a support plan for ${t.name}`, `${t.manager}'s team: ${t.flags.map((f) => f.text.charAt(0).toLowerCase() + f.text.slice(1)).join("; ")}.`, "VP Sales with " + t.manager, "summary"]);
+    if (crit.length) dec.push(["bad", "Escalate critical renewals", `${crit.length} accounts (${gbpK(crit.reduce((a, x) => a + x.arr, 0))} ARR) renew within six months with critical health scores.`, "CS lead and account owners", "renewals"]);
+    const slowS = MR.bySdr.filter((x) => x.touchHours > 24);
+    if (slowS.length) dec.push(["warn", "Fix speed to lead", `${slowS.map((x) => x.sdr).join(", ")}: median first touch over 24 hours. Rebalance routing or add SDR cover.`, "Marketing and SDR manager", "marketing"]);
+    if (CP.gap > 0 && CP.hiresNeeded != null) dec.push(["warn", "Approve the FY27 hiring plan", `About ${CP.hiresNeeded} AE hires starting ${MON[+$("capMonth").value - 1]} close the FY27 capacity gap; each month of delay raises the number needed.`, "CRO and CFO", "planning"]);
+    $("decTable").innerHTML = `<thead><tr><th>Decision</th><th>Why</th><th>Owner</th><th>Detail</th></tr></thead><tbody>` +
+      dec.map(([lv, what, why, who, tab]) => `<tr><td style="min-width:200px">${pill(lv, lv === "bad" ? "Act" : "Watch")} <b>${what}</b></td><td style="min-width:260px">${esc(why)}</td><td>${esc(who)}</td><td><a class="golink" href="#${tab}">View</a></td></tr>`).join("") + "</tbody>";
+
+    const sup = teams.filter((t) => t.status !== "good").sort((a, b) => b.flags.length - a.flags.length)[0];
+    const findings = [
+      [lvl, `Q4 is likely to land at ${gbpK(l.likely)}, ${pct(l.likelyPct)} of quota, with a range of ${gbpK(l.floor)} to ${gbpK(l.stretch)}. The full year is likely to finish at ${pct(FY.fyLikely / FY.fyQuota)} of the FY26 plan.`],
+      [cf.level === "High" ? "good" : cf.level === "Medium" ? "warn" : "bad", `Confidence in that forecast is ${cf.level.toLowerCase()} (${cf.score}/100): coverage is ${x(cv.rawCoverage)} on paper but ${x(cv.cleanCoverage)} once deals with issues are removed.`],
+      sup ? [sup.status, `${sup.name}, managed by ${sup.manager}, is the team that needs help: ${sup.flags.map((f) => f.text.charAt(0).toLowerCase() + f.text.slice(1)).join("; ")}.`] : null,
+      [FY.jump > 0.15 ? "warn" : "good", `Calibrating against history shows Commit deals close at ${pct(CAL.rates.Commit)}, not the ${pct(E.CAT_RATE.Commit)} usually assumed${FY.jump > 0 ? `, and the likely Q4 would be a record quarter, ${pct(FY.jump)} above the best so far` : ""}.`],
+      [RR.bands[2].accounts ? "bad" : "warn", `${gbpK(RR.atRiskArr)} of ARR renewing in the next six months is at risk; ${crit.length} accounts are critical.`],
+      ["warn", `The single highest-value action right now: ${h.actions[0].text.charAt(0).toLowerCase() + h.actions[0].text.slice(1)} (${esc(h.actions[0].account)}, ${gbpK(h.actions[0].amount)}).`],
+    ].filter(Boolean);
+    $("startFindings").innerHTML = findings.map(([lv, t]) => `<li>${pill(lv, { good: "Good", warn: "Watch", bad: "Act" }[lv])}<span>${t}</span></li>`).join("");
+
+    $("focusTable").innerHTML = `<thead><tr><th>Deal</th><th>Priority</th><th>Action</th><th class="n">Value</th></tr></thead><tbody>` +
+      h.actions.slice(0, 6).map((a) => `<tr><td><div>${esc(a.account)}</div><div class="sub">${esc(a.owner)} · ${a.stage}</div></td><td>${priTag(a.priority)}</td><td>${esc(a.text)}</td><td class="n">${a.amount ? gbpK(a.amount) : "–"}</td></tr>`).join("") + "</tbody>";
+
+    $("teamTable").innerHTML = `<thead><tr><th>Team</th><th class="n">Reps</th><th class="n">Quota</th><th class="n">Closed</th><th class="n">Likely landing</th><th class="n">Clean coverage</th><th class="n">Clean deals</th><th class="n">High actions</th><th>Status</th><th>Why</th></tr></thead><tbody>` +
+      teams.map((t) => `<tr><td><b>${t.name}</b><div class="sub">Manager: ${t.manager}</div></td><td class="n">${t.reps.length}</td><td class="n">${gbpK(t.quota)}</td><td class="n">${gbpK(t.closed)} <span class="sub">(${pct(t.attainment)})</span></td>
+        <td class="n">${gbpK(t.landing.likely)} <span class="pill st-${t.landing.likelyPct >= 1 ? "good" : t.landing.likelyPct >= 0.9 ? "warn" : "bad"}">${pct(t.landing.likelyPct)}</span></td>
+        <td class="n">${x(t.coverage.cleanCoverage)} <span class="sub">of ${x(t.coverage.required)}</span></td><td class="n">${pct(t.cleanRate)}</td><td class="n">${t.highActions}</td><td><span class="pill st-${t.status}">${STATUS[t.status]}</span></td><td style="min-width:240px" class="sub">${t.flags.length ? t.flags.map((f, i) => esc(i ? f.text.charAt(0).toLowerCase() + f.text.slice(1) : f.text)).join("; ") : "No flags: on or above every threshold"}</td></tr>`).join("") + "</tbody>";
+    const needs = teams.filter((t) => t.status !== "good").sort((a, b) => b.flags.length - a.flags.length);
+    $("supportBox").innerHTML = needs.map((t) => `<div class="box"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>${t.manager}, ${t.name}</b><span class="pill st-${t.status}">${STATUS[t.status]}</span></div>
+      <div class="sbcols"><div><div class="eyebrow">Why</div><ul>${t.flags.map((f) => `<li>${esc(f.text)}</li>`).join("")}</ul></div><div><div class="eyebrow">Suggested support</div><ul>${t.flags.map((f) => `<li>${SUGGEST[f.key]}</li>`).join("")}</ul></div></div></div>`).join("");
+
+    const people = teams.flatMap((t) => t.reps);
+    $("tenureTable").innerHTML = `<thead><tr><th>Rep</th><th>Team</th><th>Started</th><th class="n">Tenure</th><th style="min-width:170px">TTM attainment vs expected</th><th class="n">Q4 so far</th><th>Read</th></tr></thead><tbody>` +
+      people.map((r) => `<tr><td>${esc(r.name)}${r.ramping ? ` <span class="pill st-warn">Ramping</span>` : ""}</td><td>${r.team}</td><td>${monthYear(r.start)}</td><td class="n">${tenureFmt(r.months)}</td>
+        <td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span class="${r.level === "good" ? "ok" : ""}" style="width:${Math.min(100, (r.ttmAttainment / 1.3) * 100)}%"></span><i class="mark" style="left:${(r.expected / 1.3) * 100}%" title="Expected ${pct(r.expected)}"></i></div><span class="num">${pct(r.ttmAttainment)}</span><span class="sub">/ ${pct(r.expected)}</span></div></td>
+        <td class="n">${pct(r.q4Attainment)}</td><td><span class="pill st-${r.level}">${r.verdict}</span></td></tr>`).join("") + "</tbody>";
+
+    const S = SERIES.arr, rows = S.rows.slice(-8), ys = rows.map((r) => r[1]), tr = E.linearTrend(ys, 4), li = rows[rows.length - 1][0];
+    $("sumProj").innerHTML = lineChart({ labels: rows.map((r) => E.qLabel(r[0])).concat([1, 2, 3, 4].map((k) => E.qLabel(li + k))), values: ys, trend: tr, fmt: S.fmt, H: 240 });
+    const end = tr.projection[3];
+    $("sumProjText").innerHTML = `ARR is ${gbpM(last.arr)} and adding about ${gbpK(tr.slope)} a quarter. On this trend it reaches <b class="mono">${gbpM(end.y)}</b> by ${E.qLabel(li + 4)} (likely ${gbpM(end.lo)} to ${gbpM(end.hi)}). ${(() => { const y = M.slice(-4), nw = y.reduce((a, m) => a + m.newArr, 0), base = y.reduce((a, m) => a + m.expansion - m.contraction - m.churn, 0);
+      return `Over the last year new logos added ${gbpK(nw)} and the existing base a net ${gbpK(base)}, so ${pct(nw / (nw + base))} of growth came from new customers. With GRR at ${pct1(last.grr)}, cutting churn is the cheapest way to bend the line up.`; })()} More on the Revenue metrics tab.`;
+  }
+
+  // ---------- Marketing ----------
+  const OUT = [["landed", "Landed (won)", "var(--good)", "Closed won since 1 July"], ["likely", "Likely to land", "var(--accent)", "Open Commit or Best Case with no hygiene issues"],
+    ["atRisk", "May not land", "var(--warn)", "Open in Pipeline category, or carrying a hygiene issue"], ["lost", "Lost", "var(--bad)", "Closed lost since 1 July"]];
+  const stackBar = (o, h = 14) => `<div class="stack" style="height:${h}px">${OUT.map(([k, lb, col]) => `<span style="width:${o.total ? (o[k] / o.total) * 100 : 0}%;background:${col}" title="${lb}: ${gbpK(o[k])}"></span>`).join("")}</div>`;
+  const touchPill = (h) => `<span class="pill st-${h > 24 ? "bad" : h > 12 ? "warn" : "good"}">${Math.round(h)} h</span>`;
+  function renderMarketing(c) {
+    const R = E.marketingReport(leads, deals, c), f = R.funnel, d = R.disp, o = R.outcomes;
+    const decided = f.sql + d.disqualified + d.recycled, decidedRate = decided ? f.sql / decided : 0;
+    $("mkScope").innerHTML = `<b>Window:</b> leads created 1 July to 4 November 2026 (Q3 and Q4 to date), so "landed" includes Q3 wins. The sales tabs cover Q4 only.`;
+    $("mkFacts").innerHTML = [
+      ["MQLs", f.mql, "since 1 July"], ["SQLs", f.sql, pct(f.mqlToSql) + " of MQLs"], ["Opportunities", f.opp, pct(f.oppRate) + " of SQLs accepted by AEs"],
+      ["Pipeline from MQLs", gbpK(R.pipeline), "won, open and lost"], ["Landed", gbpK(o.landed), pct(o.total ? o.landed / o.total : 0) + " of that pipeline"],
+      ["Dumped", d.disqualified, "disqualified"], ["Recirculated", d.recycled, "recycled to nurture"],
+    ].map(([k, v, n]) => `<div><span class="k">${k}</span><span class="v">${v}</span><span class="note">${n}</span></div>`).join("");
+    const rows = [["MQL", "Marketing qualified lead", f.mql, null], ["SAL", "Accepted and worked by an SDR", f.sal, f.salRate], ["SQL", "Qualified by the SDR, handed to an AE", f.sql, f.sqlRate],
+      ["Opportunity", "Accepted by the AE", f.opp, f.oppRate], ["Won", "Closed won", f.won, f.winRate]];
+    $("mkFunnel").innerHTML = `<thead><tr><th>Stage</th><th class="n">Leads</th><th style="min-width:130px">From previous</th></tr></thead><tbody>` +
+      rows.map(([k, desc, n, rt]) => `<tr><td><b>${k}</b><div class="sub">${desc}</div></td><td class="n">${n}</td><td>${rt == null ? `<span class="sub">–</span>` : `<div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span style="width:${rt * 100}%"></span></div><span class="num">${pct(rt)}</span></div>`}</td></tr>`).join("") + "</tbody>";
+    $("mkFunnelNote").innerHTML = `${d.working + d.unworked} leads are still being worked, which pulls the headline MQL to SQL rate down. Of leads with a decision, <b>${pct(decidedRate)}</b> became SQLs. Median time to first touch: <b>${Math.round(R.touchHours)} hours</b>.`;
+    $("mkStack").innerHTML = stackBar(o, 18);
+    $("mkKeys").innerHTML = OUT.map(([k, lb, col]) => `<span style="--c:${col}">${lb} ${pct(o.total ? o[k] / o.total : 0)}</span>`).join("");
+    $("mkOutcomes").innerHTML = `<thead><tr><th>Status</th><th class="n">Value</th><th class="n">Share</th><th>Meaning</th></tr></thead><tbody>` +
+      OUT.map(([k, lb, , mean]) => `<tr><td>${lb}</td><td class="n">${gbpK(o[k])}</td><td class="n">${pct(o.total ? o[k] / o.total : 0)}</td><td class="sub">${mean}</td></tr>`).join("") +
+      `<tr class="avg"><td><b>Expected to convert</b></td><td class="n"><b>${gbpK(o.expected)}</b></td><td class="n">${pct(o.total ? o.expected / o.total : 0)}</td><td class="sub">Landed, plus open deals at the calibrated category rates</td></tr></tbody>`;
+    $("mkTeams").innerHTML = `<thead><tr><th>Team</th><th class="n">MQLs</th><th class="n">SQLs</th><th class="n">MQL to SQL</th><th class="n">Opps</th><th style="min-width:150px">Pipeline outcome</th><th class="n">Landed</th><th class="n">Likely</th><th class="n">May not land</th><th class="n">Lost</th><th class="n">Dumped</th><th class="n">Recycled</th><th class="n">First touch</th></tr></thead><tbody>` +
+      R.byTeam.map((t) => `<tr><td><b>${t.team}</b><div class="sub">${t.manager}</div></td><td class="n">${t.mql}</td><td class="n">${t.sql}</td><td class="n"><span class="pill st-${t.mqlToSql >= 0.28 ? "good" : t.mqlToSql >= 0.22 ? "warn" : "bad"}">${pct(t.mqlToSql)}</span></td><td class="n">${t.opp}</td>
+        <td>${stackBar(t.outcomes, 10)}</td><td class="n">${gbpK(t.outcomes.landed)}</td><td class="n">${gbpK(t.outcomes.likely)}</td><td class="n">${gbpK(t.outcomes.atRisk)}</td><td class="n">${gbpK(t.outcomes.lost)}</td>
+        <td class="n">${t.disqualified} <span class="sub">(${pct(t.mql ? t.disqualified / t.mql : 0)})</span></td><td class="n">${t.recycled}</td><td class="n">${touchPill(t.touchHours)}</td></tr>`).join("") + "</tbody>";
+    $("mkSdrs").innerHTML = `<thead><tr><th>SDR</th><th class="n">Tenure</th><th class="n">MQLs</th><th class="n">First touch</th><th class="n">SQLs</th><th class="n">MQL to SQL</th><th class="n">AE accepted</th><th class="n">Pipeline from MQLs</th><th class="n">Won</th><th class="n">Outbound opps</th><th class="n">Unworked 2d+</th></tr></thead><tbody>` +
+      R.bySdr.map((x) => { const m = E.tenureMonths(x.start, AS_OF);
+        return `<tr><td>${x.sdr}<div class="sub">${x.team}</div></td><td class="n">${tenureFmt(m)}</td><td class="n">${x.mql}</td><td class="n">${touchPill(x.touchHours)}</td><td class="n">${x.sql}</td><td class="n">${pct(x.mqlToSql)}</td><td class="n">${pct(x.oppRate)}</td>
+        <td class="n">${gbpK(x.pipeline)}</td><td class="n">${gbpK(x.wonValue)}</td><td class="n">${x.outboundOpps} <span class="sub">(${gbpK(x.outboundValue)})</span></td><td class="n" style="color:var(${x.staleNew ? "--bad" : "--muted"})">${x.staleNew}</td></tr>`; }).join("") + "</tbody>";
+    const reasonTable = (list, total) => `<thead><tr><th>Reason</th><th class="n">Leads</th><th style="min-width:120px">Share</th></tr></thead><tbody>` +
+      list.map((r) => `<tr><td>${esc(r.reason)}</td><td class="n">${r.count}</td><td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span style="width:${(r.count / total) * 100}%"></span></div><span class="num">${pct(r.count / total)}</span></div></td></tr>`).join("") + "</tbody>";
+    $("mkDq").innerHTML = reasonTable(R.dqReasons, d.disqualified);
+    $("mkRec").innerHTML = reasonTable(R.recycleReasons, d.recycled);
+    $("mkOpen").innerHTML = `Still in play: ${d.working} leads being worked and ${d.unworked} not yet touched, <b style="color:var(--bad)">${d.staleNew} of them waiting more than two days</b>. A further ${d.rejected} SQLs were turned down by AEs (${R.rejectReasons.map((r) => r.reason.toLowerCase() + ": " + r.count).join(", ")}).`;
+    $("mkChannels").innerHTML = `<thead><tr><th>Channel</th><th class="n">Spend</th><th class="n">MQLs</th><th class="n">Cost per MQL</th><th class="n">SQLs</th><th class="n">MQL to SQL</th><th class="n">Cost per SQL</th><th class="n">Pipeline</th><th class="n">Pipeline per £1</th><th class="n">Won</th></tr></thead><tbody>` +
+      R.byChannel.slice().sort((a, b) => b.pipelinePerPound - a.pipelinePerPound).map((ch) => `<tr><td>${ch.channel}</td><td class="n">${gbpK(ch.spend)}</td><td class="n">${ch.mql}</td><td class="n">${gbp(ch.costPerMql)}</td><td class="n">${ch.sql}</td><td class="n">${pct(ch.mqlToSql)}</td>
+        <td class="n">${ch.costPerSql == null ? "–" : gbp(ch.costPerSql)}</td><td class="n">${gbpK(ch.pipeline)}</td><td class="n"><span class="pill st-${ch.pipelinePerPound >= 20 ? "good" : ch.pipelinePerPound >= 10 ? "warn" : "bad"}">£${ch.pipelinePerPound.toFixed(1)}</span></td><td class="n">${gbpK(ch.wonValue)}</td></tr>`).join("") + "</tbody>";
+    $("mkSource").innerHTML = `<thead><tr><th>Source</th><th class="n">Deals</th><th class="n">Open value</th><th style="min-width:140px">Share</th><th class="n">Closing in Q4</th></tr></thead><tbody>` +
+      R.bySource.map((x) => `<tr><td>${x.source}</td><td class="n">${x.deals}</td><td class="n">${gbpK(x.value)}</td><td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span style="width:${x.share * 100}%"></span></div><span class="num">${pct(x.share)}</span></div></td><td class="n">${gbpK(x.inQuarter)}</td></tr>`).join("") + "</tbody>";
+    return R;
+  }
+
+
+  // ---------- Shared bits ----------
+  const TEAMCOL = { Enterprise: "var(--accent)", "Mid-Market": "var(--good)", Growth: "var(--warn)" };
+  const bandLv = (b) => (b === "Healthy" ? "good" : b === "At risk" ? "warn" : "bad");
+  const factsHtml = (rows) => rows.map(([k, v, n]) => `<div><span class="k">${k}</span><span class="v">${v}</span>${n ? `<span class="note">${n}</span>` : ""}</div>`).join("");
+  const bar = (v, ok) => `<div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span class="${ok ? "ok" : ""}" style="width:${Math.min(100, v * 100)}%"></span></div><span class="num">${pct(v)}</span></div>`;
+
+  // ---------- Activity ----------
+  function scatter(pts, { xmax, ymin, ymax, xfmt, yfmt, xl, yl, refX }) {
+    const W = 720, H = 300, L = 58, R = 20, T = 16, B = 46;
+    const xt = niceTicks(0, xmax), yt = niceTicks(ymin, ymax), x1 = xt[xt.length - 1], y0 = yt[0], y1 = yt[yt.length - 1];
+    const X = (v) => L + (v / x1) * (W - L - R), Y = (v) => T + (H - T - B) * (1 - (v - y0) / (y1 - y0));
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${yl} against ${xl}">`;
+    for (const t of yt) s += `<line x1="${L}" x2="${W - R}" y1="${Y(t)}" y2="${Y(t)}" style="stroke:var(--line)"/><text x="${L - 8}" y="${Y(t) + 4}" text-anchor="end">${yfmt(t)}</text>`;
+    for (const t of xt) s += `<text x="${X(t)}" y="${H - 24}" text-anchor="middle">${xfmt(t)}</text>`;
+    s += `<text x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle">${xl}</text>`;
+    if (refX != null) s += `<line x1="${X(refX)}" x2="${X(refX)}" y1="${T}" y2="${H - B}" style="stroke:var(--muted)" stroke-dasharray="4 4"/>`;
+    for (const p of pts) s += `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="7" style="fill:${p.col};opacity:.9"><title>${p.label}: ${xfmt(p.x)}, ${yfmt(p.y)}</title></circle><text x="${X(p.x) + 10}" y="${Y(p.y) + 4}" style="fill:var(--ink)">${p.label.split(" ")[0]}</text>`;
+    return s + "</svg>";
+  }
+  function renderActivity() {
+    const wk = ACT.days / 7, reps = ACT.reps.map((r) => ({ ...r, perWeek: r.meetings / wk }));
+    const hi = reps.filter((r) => r.perWeek >= 4.5), lo = reps.filter((r) => r.perWeek < 4.5), avg = (xs) => xs.reduce((a, r) => a + r.ttmAttainment, 0) / (xs.length || 1);
+    const sd = ACT.sdrs, tot = (k, xs) => xs.reduce((a, r) => a + r[k], 0);
+    $("actFacts").innerHTML = factsHtml([
+      ["AE meetings", tot("meetings", reps), (tot("meetings", reps) / reps.length / wk).toFixed(1) + " a week per AE"],
+      ["AE calls", tot("calls", reps).toLocaleString("en-GB"), "last 30 days"],
+      ["SDR meetings booked", tot("booked", sd), tot("held", sd) + " held"],
+      ["SDR show rate", pct(tot("held", sd) / tot("booked", sd)), "held ÷ booked"],
+      ["SDR connect rate", pct1(tot("connects", sd) / tot("calls", sd)), "conversations ÷ calls"],
+    ]);
+    $("actScatter").innerHTML = scatter(reps.map((r) => ({ x: r.perWeek, y: r.ttmAttainment, label: r.name, col: TEAMCOL[r.team] })),
+      { xmax: Math.max(...reps.map((r) => r.perWeek)) * 1.15, ymin: 0.4, ymax: 1.2, xfmt: (v) => v.toFixed(1), yfmt: pct, xl: "Meetings a week", yl: "TTM attainment", refX: 4.5 });
+    $("actInsight").innerHTML = `Reps averaging 4.5 or more meetings a week (${hi.length}) run at <b>${pct(avg(hi))}</b> trailing attainment; the ${lo.length} below run at <b>${pct(avg(lo))}</b>. With nine reps this is a pattern worth investigating, not proof that meetings cause attainment.`;
+    $("actReps").innerHTML = `<thead><tr><th>Rep</th><th class="n">Calls</th><th class="n">Emails</th><th class="n">Meetings</th><th class="n">A week</th><th class="n">Calls per meeting</th><th class="n">TTM attainment</th></tr></thead><tbody>` +
+      reps.map((r) => `<tr><td>${esc(r.name)}<div class="sub">${r.team}</div></td><td class="n">${r.calls}</td><td class="n">${r.emails}</td><td class="n">${r.meetings}</td>
+        <td class="n"><span class="pill st-${r.perWeek >= 4.5 ? "good" : r.perWeek >= 3.5 ? "warn" : "bad"}">${r.perWeek.toFixed(1)}</span></td><td class="n">${(r.calls / r.meetings).toFixed(1)}</td><td class="n">${pct(r.ttmAttainment)}</td></tr>`).join("") + "</tbody>";
+    $("actSdrs").innerHTML = `<thead><tr><th>SDR</th><th class="n">Calls</th><th class="n">Connects</th><th class="n">Connect rate</th><th class="n">Emails</th><th class="n">Emails per call</th><th class="n">Booked</th><th class="n">Held</th><th class="n">Show rate</th></tr></thead><tbody>` +
+      sd.map((r) => { const cr = r.connects / r.calls, sr = r.held / r.booked;
+        return `<tr><td>${esc(r.name)}<div class="sub">${r.team}</div></td><td class="n">${r.calls}</td><td class="n">${r.connects}</td><td class="n"><span class="pill st-${cr >= 0.08 ? "good" : cr >= 0.05 ? "warn" : "bad"}">${pct1(cr)}</span></td>
+        <td class="n">${r.emails.toLocaleString("en-GB")}</td><td class="n">${(r.emails / r.calls).toFixed(1)}</td><td class="n">${r.booked}</td><td class="n">${r.held}</td><td class="n"><span class="pill st-${sr >= 0.75 ? "good" : sr >= 0.65 ? "warn" : "bad"}">${pct(sr)}</span></td></tr>`; }).join("") + "</tbody>";
+  }
+
+  // ---------- Renewals ----------
+  function renderRenewals() {
+    const R = E.renewalReport(RENEW), crit = R.bands.find((b) => b.band === "Critical");
+    $("rnFacts").innerHTML = factsHtml([
+      ["Accounts renewing", R.accounts, "next six months"], ["ARR renewing", gbpK(R.arr), ""], ["Forecast renewed", gbpK(R.forecast), "forecast GRR " + pct1(R.forecastGrr)],
+      ["ARR at risk", gbpK(R.atRiskArr), "At risk or Critical"], ["Critical accounts", crit.accounts, gbpK(crit.arr) + " ARR"],
+    ]);
+    const cols = { Healthy: "var(--good)", "At risk": "var(--warn)", Critical: "var(--bad)" };
+    $("rnStack").innerHTML = `<div class="stack" style="height:18px">${R.bands.map((b) => `<span style="width:${(b.arr / R.arr) * 100}%;background:${cols[b.band]}" title="${b.band}: ${gbpK(b.arr)}"></span>`).join("")}</div>`;
+    $("rnKeys").innerHTML = R.bands.map((b) => `<span style="--c:${cols[b.band]}">${b.band}: ${b.accounts} accounts, ${gbpK(b.arr)}</span>`).join("");
+    const order = { Critical: 0, "At risk": 1, Healthy: 2 };
+    $("rnTable").innerHTML = `<thead><tr><th>Account</th><th>Owner</th><th class="n">Renews</th><th class="n">ARR</th><th class="n">Health</th><th>Warning signs</th><th>Next action</th></tr></thead><tbody>` +
+      RENEW.slice().sort((a, b) => order[a.band] - order[b.band] || (a.renewalDate < b.renewalDate ? -1 : 1)).map((a) => `<tr><td>${esc(a.account)}<div class="sub mono">${a.id}</div></td><td>${esc(a.owner)}<div class="sub">${a.team}</div></td>
+        <td class="n">${fmtDate(a.renewalDate)}<div class="sub">${E.daysBetween(AS_OF, a.renewalDate)} days</div></td><td class="n">${gbpK(a.arr)}</td>
+        <td class="n"><span class="pill st-${bandLv(a.band)}">${a.score} · ${a.band}</span></td>
+        <td style="min-width:200px">${a.drivers.length ? a.drivers.slice(0, 3).map((d) => `<div class="sub">${esc(d.why)} <span class="mono">−${d.pts}</span></div>`).join("") : `<span class="sub">None</span>`}</td>
+        <td style="min-width:240px">${a.band === "Healthy" ? `<span class="sub">${esc(a.action)}</span>` : esc(a.action)}</td></tr>`).join("") + "</tbody>";
+    return R;
+  }
+
+  // ---------- Win/loss, calibration, attribution ----------
+  function renderWinLoss() {
+    const W = E.winLoss(OPPS_E);
+    $("wlReasons").innerHTML = `<thead><tr><th>Reason</th><th class="n">Deals</th><th class="n">Value lost</th><th style="min-width:120px">Share of value</th><th>Most often lost at</th></tr></thead><tbody>` +
+      W.reasons.map((r) => { const si = r.byStage.indexOf(Math.max(...r.byStage));
+        return `<tr><td>${esc(r.reason)}</td><td class="n">${r.count}</td><td class="n">${gbpK(r.value)}</td><td>${bar(r.value / W.lostValue)}</td><td>${E.STAGES[si].name}</td></tr>`; }).join("") + "</tbody>";
+    $("wlComps").innerHTML = `<thead><tr><th>Competitor</th><th class="n">Deals</th><th class="n">Win rate</th><th class="n">Lost to them</th><th class="n">Value lost</th></tr></thead><tbody>` +
+      W.competitors.map((c) => `<tr><td>${c.competitor}</td><td class="n">${c.deals}</td><td class="n"><span class="pill st-${c.winRate >= W.overallWinRate + 0.05 ? "good" : c.winRate >= W.overallWinRate - 0.05 ? "warn" : "bad"}">${pct(c.winRate)}</span></td><td class="n">${c.lostToThem}</td><td class="n">${gbpK(c.lostValue)}</td></tr>`).join("") + "</tbody>";
+    const worst = W.competitors.filter((c) => c.competitor !== "No competitor identified").sort((a, b) => a.winRate - b.winRate)[0];
+    $("wlNote").innerHTML = `Overall win rate on these deals is ${pct(W.overallWinRate)}. ${worst.competitor} is the one to prepare for: ${pct(worst.winRate)} across ${worst.deals} deals. Competitors are anonymised as Rival A, B and C.`;
+    $("calTable").innerHTML = `<thead><tr><th>Category</th><th class="n">Assumed</th><th class="n">Calibrated</th><th class="n">History</th><th class="n">Difference</th></tr></thead><tbody>` +
+      ["Commit", "Best Case", "Pipeline"].map((k) => { const a = E.CAT_RATE[k], c = CAL.rates[k], n = CAL.counts[k];
+        return `<tr><td>${k}</td><td class="n">${pct(a)}</td><td class="n"><b>${pct(c)}</b></td><td class="n">${n.won} won of ${n.deals}</td><td class="n">${sgn(c - a, (v) => (v * 100).toFixed(1) + " pts")}</td></tr>`; }).join("") + "</tbody>";
+    return W;
+  }
+  function renderAttribution() {
+    const byId = Object.fromEntries(deals.map((d) => [d.id, d])), A = E.attribution(leads, byId, TOUCHES);
+    $("atSub").textContent = `Pipeline from MQLs credited to channels four ways. Journeys average ${A.avgTouches.toFixed(1)} touches; the last touch is the MQL's converting channel`;
+    const M4 = [["first", "First touch"], ["last", "Last touch"], ["linear", "Linear"], ["position", "Position-based"]];
+    const best = Object.fromEntries(M4.map(([k]) => [k, Math.max(...A.channels.map((c) => c[k]))]));
+    $("atTable").innerHTML = `<thead><tr><th>Channel</th>${M4.map(([, l]) => `<th class="n">${l}</th>`).join("")}<th class="n">Swing</th><th class="n">Pipeline per £1 (linear)</th></tr></thead><tbody>` +
+      A.channels.map((c) => { const vals = M4.map(([k]) => c[k]), sw = Math.max(...vals) - Math.min(...vals);
+        return `<tr><td>${c.channel}</td>${M4.map(([k]) => `<td class="n">${c[k] === best[k] ? "<b>" + gbpK(c[k]) + "</b>" : gbpK(c[k])}</td>`).join("")}<td class="n">${gbpK(sw)}</td><td class="n">£${(c.linear / c.spend).toFixed(1)}</td></tr>`; }).join("") +
+      `<tr class="avg"><td><b>Total</b></td>${M4.map(() => `<td class="n">${gbpK(A.total)}</td>`).join("")}<td></td><td></td></tr></tbody>`;
+    const big = A.channels.slice().sort((a, b) => (b.first - b.last) - (a.first - a.last))[0], closer = A.channels.slice().sort((a, b) => (b.last - b.first) - (a.last - a.first))[0];
+    $("atText").innerHTML = `${big.channel} starts far more journeys than it finishes (${gbpK(big.first)} first touch against ${gbpK(big.last)} last touch), so judging it on last touch alone would undervalue it. ${closer.channel} is the opposite: a closer, not an opener. Position-based gives 40% to the first touch, 40% to the last and shares 20% across the middle.`;
+  }
+
+  // ---------- Planning: scenario ----------
+  const choices = {};
+  const Q1_END = "2027-03-31";
+  function scenarioDeals(c) {
+    return E.hygieneReport(deals, c).deals.filter((d) => d.closeDate >= c.periodStart && d.closeDate <= Q1_END)
+      .sort((a, b) => (a.closeDate <= c.periodEnd) === (b.closeDate <= c.periodEnd) ? b.amount - a.amount : a.closeDate <= c.periodEnd ? -1 : 1);
+  }
+  function drawScenarioTable(c) {
+    const list = scenarioDeals(c);
+    $("scDeals").innerHTML = `<thead><tr><th>Deal</th><th>Stage</th><th>Category</th><th class="n">Amount</th><th class="n">Close</th><th class="n">Issues</th><th>Scenario</th></tr></thead><tbody>` +
+      list.map((d) => { const inQ = d.closeDate <= c.periodEnd, v = choices[d.id] || "";
+        return `<tr${v ? ' class="picked"' : ""}><td>${esc(d.account)}<div class="sub">${esc(d.owner)}</div></td><td>${d.stage}</td><td>${d.forecastCategory}</td><td class="n">${d.amount ? gbpK(d.amount) : "–"}</td>
+        <td class="n">${fmtDate(d.closeDate)}${inQ ? "" : `<div class="sub">next quarter</div>`}</td><td class="n">${d.flags.length ? `<span class="chip">${d.flags.length}</span>` : `<span class="okchip">0</span>`}</td>
+        <td><select data-deal="${d.id}" aria-label="Scenario for ${esc(d.account)}"><option value="">As forecast</option><option value="won"${v === "won" ? " selected" : ""}>Won in Q4</option><option value="lost"${v === "lost" ? " selected" : ""}>Lost</option>${inQ ? "" : `<option value="pull"${v === "pull" ? " selected" : ""}>Pull into Q4</option>`}</select></td></tr>`; }).join("") + "</tbody>";
+  }
+  function drawScenarioResults(c) {
+    const S = E.scenario(deals, c, choices), n = Object.keys(choices).length;
+    $("scFacts").innerHTML = factsHtml([
+      ["Likely now", gbpK(S.base.likely), pct(S.base.likelyPct) + " of quota"], ["Likely in scenario", gbpK(S.scenario.likely), pct(S.scenario.likelyPct) + " of quota"],
+      ["Change", Math.abs(S.delta) < 1 ? "None" : sgn(S.delta, gbpK), n ? n + " deal" + (n > 1 ? "s" : "") + " changed" : "no changes yet"], ["Range in scenario", gbpK(S.scenario.floor) + " – " + gbpK(S.scenario.stretch), "floor to stretch"],
+      ["Commission on won deals", viewTeam() ? gbp(S.reps.filter((r) => r.team === viewTeam()).reduce((a, r) => a + r.commission, 0)) : gbp(S.commission), viewTeam() ? viewTeam() + " reps only" : "paid to reps"],
+    ]);
+    $("scRepsCard").hidden = !S.reps.length;
+    $("scReps").innerHTML = `<thead><tr><th>Rep</th><th class="n">Won in scenario</th><th class="n">Attainment before</th><th class="n">After</th><th class="n">Commission</th></tr></thead><tbody>` +
+      S.reps.filter((r) => !viewTeam() || r.team === viewTeam()).map((r) => `<tr><td>${esc(r.owner)}<div class="sub">${r.team}</div></td><td class="n">${gbpK(r.won)}</td><td class="n">${pct(r.attainmentBefore)}</td><td class="n"><b>${pct(r.attainmentAfter)}</b>${r.attainmentAfter >= 1 && r.attainmentBefore < 1 ? ` <span class="pill st-good">Over quota</span>` : ""}</td><td class="n">${gbp(r.commission)}</td></tr>`).join("") + "</tbody>";
+  }
+
+  // ---------- Planning: capacity ----------
+  const RAMPED = E.REPS.filter((r) => E.tenureMonths(r.start, AS_OF) >= 12);
+  const DEFAULT_PROD = Math.round((RAMPED.reduce((a, r) => a + r.ttmAttainment, 0) / RAMPED.length) * 100);
+  $("capProd").value = DEFAULT_PROD;
+  $("capMonth").innerHTML = MON.map((m, i) => `<option value="${i + 1}"${i === 1 ? " selected" : ""}>${m} 2027</option>`).join("");
+  function renderCapacity(c) {
+    const num = (id, d) => { const v = parseFloat($(id).value); return isFinite(v) ? v : d; };
+    const p = { target: Math.max(0, num("capTarget", 0)), attrition: Math.min(0.6, Math.max(0, num("capAttr", 15) / 100)), hires: Math.max(0, Math.round(num("capHires", 0))),
+      hireMonth: +$("capMonth").value, productivity: Math.max(0.1, num("capProd", DEFAULT_PROD) / 100), quarterQuota: c.quota };
+    const cp = E.capacityPlan(p), late = E.capacityPlan({ ...p, hireMonth: Math.min(12, p.hireMonth + 4) });
+    $("capFacts").innerHTML = factsHtml([
+      ["Target", gbpK(cp.target), "FY27 bookings"], ["Current team delivers", gbpK(cp.existing), pct(cp.target ? cp.existing / cp.target : 0) + " of target, after attrition"],
+      ["With planned hires", gbpK(cp.total), p.hires + " hire" + (p.hires === 1 ? "" : "s") + " from " + MON[p.hireMonth - 1]],
+      [cp.gap > 0 ? "Still short" : "Over target", gbpK(Math.abs(cp.gap)), cp.gap > 0 ? "after planned hires" : ""],
+      ["Hires needed", cp.hiresNeeded == null ? "40+" : cp.hiresNeeded, "starting " + MON[p.hireMonth - 1]], ["Each hire adds", gbpK(cp.perHire), "in FY27, after ramp"],
+    ]);
+    const W = 720, H = 260, L = 58, R = 12, T = 12, B = 30, mt = cp.target / 12;
+    const top = niceTicks(0, Math.max(mt, ...cp.rows.map((r) => r.total)) * 1.1), t1 = top[top.length - 1];
+    const Y = (v) => T + (H - T - B) * (1 - v / t1), slot = (W - L - R) / 12, bw = slot * 0.6;
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly capacity against target">`;
+    for (const t of top) s += `<line x1="${L}" x2="${W - R}" y1="${Y(t)}" y2="${Y(t)}" style="stroke:var(--line)"/><text x="${L - 8}" y="${Y(t) + 4}" text-anchor="end">${gbpK(t)}</text>`;
+    cp.rows.forEach((r, i) => { const x = L + slot * i + (slot - bw) / 2;
+      s += `<rect x="${x}" y="${Y(r.existing)}" width="${bw}" height="${Y(0) - Y(r.existing)}" rx="2" style="fill:var(--accent)"><title>${r.month}: team ${gbpK(r.existing)}</title></rect>`;
+      if (r.hired > 0) s += `<rect x="${x}" y="${Y(r.total)}" width="${bw}" height="${Y(r.existing) - Y(r.total)}" rx="2" style="fill:var(--good)"><title>${r.month}: hires ${gbpK(r.hired)}</title></rect>`;
+      s += `<text x="${x + bw / 2}" y="${H - 10}" text-anchor="middle">${r.month.slice(0, 3)}</text>`; });
+    s += `<line x1="${L}" x2="${W - R}" y1="${Y(mt)}" y2="${Y(mt)}" style="stroke:var(--ink)" stroke-width="2" stroke-dasharray="6 4"/>`;
+    $("capChart").innerHTML = s + "</svg>";
+    $("capText").innerHTML = cp.hiresNeeded == null ? "No realistic number of hires closes the gap in FY27 at these assumptions." :
+      `With no new hires the team covers ${pct(cp.target ? cp.existing / cp.target : 0)} of target. Starting in ${MON[p.hireMonth - 1]}, <b>${cp.hiresNeeded} hire${cp.hiresNeeded === 1 ? "" : "s"}</b> close the gap; each adds about ${gbpK(cp.perHire)} in the year because of the ramp. Starting in ${MON[Math.min(12, p.hireMonth + 4) - 1]} instead would need ${late.hiresNeeded == null ? "more than 40" : late.hiresNeeded}. Hiring early is cheaper than hiring more.`;
+    return cp;
+  }
+
+  // ---------- Your data ----------
+  const SAMPLE_CSV = `Opportunity ID,Account Name,Opportunity Owner,Stage,Amount,Close Date,Last Activity,Stage Change Date,Next Step,Forecast Category,Push Count
+DEMO-001,Example Account One,Alex Doe,Negotiation,"£85,000",18/12/2026,2026-11-02,2026-10-28,Legal redlines,Commit,0
+DEMO-002,Example Account Two,Alex Doe,Proposal,"£42,000",30/10/2026,2026-10-20,2026-10-10,Send revised proposal,Commit,1
+DEMO-003,Example Account Three,Sam Lee,Solution,"£60,000",10/12/2026,2026-10-01,2026-09-20,,Best Case,2
+DEMO-004,Example Account Four,Sam Lee,Discovery,"£25,000",20/12/2026,2026-11-03,2026-10-30,Discovery call,Commit,0
+DEMO-005,Example Account Five,Jo Park,Qualification,0,30/01/2027,2026-10-29,2026-10-15,Book demo,Pipeline,0
+DEMO-006,Example Account Six,Jo Park,Proposal,"£120,000",15/12/2026,2026-11-01,2026-10-25,Pricing sign-off,Best Case,0
+DEMO-007,Example Account Seven,Alex Doe,Negotiation,"£95,000",28/11/2026,2026-10-31,2026-10-30,Signature,Commit,0
+DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27,2026-10-12,Technical demo,Pipeline,0`;
+  $("impText").value = SAMPLE_CSV;
+  function renderImport() {
+    const c = ctx(), num = (id) => { const v = parseFloat($(id).value); return isFinite(v) ? Math.max(0, v) : 0; };
+    const ic = { ...c, quota: num("impQuota"), closedWon: num("impWon") };
+    const res = E.importDeals($("impText").value);
+    let h = "";
+    if (res.errors.length) h += `<div class="card"><div class="head"><h3>${res.errors.length} row${res.errors.length > 1 ? "s" : ""} couldn't be read</h3><div class="sub">${res.deals.length ? "The other rows were loaded." : "Nothing was loaded."}</div></div>
+      <div class="tablewrap"><table><thead><tr><th class="n">Row</th><th>Problem</th></tr></thead><tbody>${res.errors.map((e) => `<tr><td class="n">${e.row}</td><td>${esc(e.message)}</td></tr>`).join("")}</tbody></table></div></div>`;
+    if (res.deals.length) {
+      const R = E.importedReport(res.deals, ic), cv = R.coverage, l = R.landing, hy = R.hygiene;
+      h += `<div class="verdict lv-${cv.verdict.level}"><span class="pill">${{ good: "Covered", warn: "At risk", bad: "Short" }[cv.verdict.level]}</span><span>${res.deals.length} deals loaded. ${esc(cv.verdict.text)} Likely to land at ${gbpK(l.likely)} (${pct(l.likelyPct)} of quota).${cv.verdict.level !== "good" && l.likelyPct >= 1 ? " The two views disagree: at your win rate there isn't enough pipeline, yet the forecast categories say you'll make it. Usually that means some Commit and Best Case calls are too hopeful, so review those first." : ""}</span></div>`;
+      h += `<div class="facts">${factsHtml([["Deals", res.deals.length, gbpK(hy.totalValue) + " open"], ["Clean deals", hy.cleanCount + " / " + hy.total, pct(hy.cleanValueRate) + " clean by value"],
+        ["Raw coverage", x(cv.rawCoverage), "needed " + x(cv.required)], ["Clean coverage", x(cv.cleanCoverage), cv.inPeriodCount + " deals this quarter"],
+        ["Likely landing", gbpK(l.likely), gbpK(l.floor) + " – " + gbpK(l.stretch)], ["Actions", hy.actions.length, hy.actions.filter((a) => a.priority === "High").length + " high priority"]])}</div>`;
+      if (res.skipped.length) h += `<p class="sub" style="margin:0"><b>Checks skipped for this file:</b> ${res.skipped.map(esc).join("; ")}.</p>`;
+      h += `<div class="grid2"><div class="card"><div class="head"><h3>Issues by rule</h3></div><div class="tablewrap"><table><thead><tr><th>Rule</th><th class="n">Deals</th><th class="n">Value</th></tr></thead><tbody>${hy.byRule.filter((r) => r.count).map((r) => `<tr><td>${esc(r.label)}</td><td class="n">${r.count}</td><td class="n">${gbpK(r.value)}</td></tr>`).join("") || `<tr><td colspan="3" class="sub">No issues found.</td></tr>`}</tbody></table></div></div>
+        <div class="card"><div class="head"><h3>By owner</h3></div><div class="tablewrap"><table><thead><tr><th>Owner</th><th class="n">Deals</th><th class="n">Value</th><th class="n">Flagged</th></tr></thead><tbody>${R.owners.map((o) => `<tr><td>${esc(o.owner)}</td><td class="n">${o.deals}</td><td class="n">${gbpK(o.value)}</td><td class="n">${o.flagged}</td></tr>`).join("")}</tbody></table></div></div></div>`;
+      h += `<div class="card"><div class="head"><h3>Deals and next steps</h3></div><div class="tablewrap"><table><thead><tr><th>Deal</th><th>Owner</th><th>Stage</th><th class="n">Amount</th><th class="n">Close</th><th class="n">Health</th><th>Issues and next steps</th></tr></thead><tbody>` +
+        hy.deals.slice().sort((a, b) => a.health - b.health || b.amount - a.amount).map((d) => `<tr><td>${esc(d.account)}<div class="sub mono">${esc(d.id)}</div></td><td>${esc(d.owner)}</td><td>${d.stage}<div class="sub">${d.forecastCategory}</div></td><td class="n">${d.amount ? gbp(d.amount) : "–"}</td><td class="n">${fmtDate(d.closeDate)}</td>
+        <td class="n"><span class="health num" style="color:var(${d.health >= 80 ? "--good" : d.health >= 60 ? "--warn" : "--bad"})">${d.health}</span></td><td style="min-width:300px">${stepsCell(d)}</td></tr>`).join("") + `</tbody></table></div></div>`;
+    }
+    $("impOut").innerHTML = h;
+  }
+  $("impRun").addEventListener("click", renderImport);
+  $("impSample").addEventListener("click", () => { $("impText").value = SAMPLE_CSV; renderImport(); });
+  ["impQuota", "impWon"].forEach((id) => $(id).addEventListener("input", renderImport));
+  $("impFile").addEventListener("change", (e) => { const f = e.target.files && e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { $("impText").value = String(rd.result || ""); renderImport(); }; rd.readAsText(f); });
+  $("impCopy").addEventListener("click", () => { const hdr = SAMPLE_CSV.split("\n")[0];
+    const done = () => { $("impCopy").textContent = "Copied"; setTimeout(() => ($("impCopy").textContent = "Copy header row"), 1500); };
+    try { navigator.clipboard.writeText(hdr).then(done, () => { $("impText").focus(); $("impText").setSelectionRange(0, hdr.length); }); } catch (err) { $("impText").focus(); $("impText").setSelectionRange(0, hdr.length); } });
+
+  function render() {
+    const c = ctx();
+    $("wonHint").textContent = c.quota ? ((c.closedWon / c.quota) * 100).toFixed(1) + "% of quota attained" : "";
+    const h = E.hygieneReport(deals, c);
+    const com = E.commissionReport(deals, c);
+    renderCoverage(c, E.coverage(deals, c));
+    renderHygiene(c, h, com);
+    renderCommission(c, com, h);
+    renderMetrics(c);
+    const MR = renderMarketing(c);
+    renderAttribution();
+    drawScenarioTable(c); drawScenarioResults(c);
+    const CP = renderCapacity(c);
+    renderImport();
+    renderSummary(c, h, E.coverage(deals, c), E.teamReport(deals, c), MR, CP);
+  }
+
+  // Tabs routed on the hash; metric section anchors open the metrics tab.
+  const TABS = ["start", "method", "summary", "coverage", "hygiene", "commission", "activity", "marketing", "renewals", "metrics", "planning", "data"];
+  function show(hash) {
+    let tab = hash, anchor = null;
+    if (hash.startsWith("m-")) { tab = "metrics"; anchor = hash; }
+    if (!TABS.includes(tab)) tab = "start";
+    for (const t of TABS) { $("p-" + t).hidden = t !== tab; $("t-" + t).setAttribute("aria-selected", String(t === tab)); }
+    if (anchor) { const el = $(anchor); if (el) el.scrollIntoView({ block: "start" }); }
+  }
+  document.querySelectorAll("nav.tabs button").forEach((b) => b.addEventListener("click", () => { location.hash = b.dataset.tab; show(b.dataset.tab); }));
+  window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+
+  ["quota", "won", "wr", "stale"].forEach((id) => $(id).addEventListener("input", render));
+  $("ownerFilter").addEventListener("change", render);
+  $("repPick").addEventListener("change", render);
+  $("viewAs").addEventListener("change", render);
+  $("repTable").addEventListener("click", (e) => { const b = e.target.closest("[data-review]"); if (!b) return; $("repPick").value = b.dataset.review; render(); $("repDealCard").scrollIntoView({ behavior: "smooth", block: "start" }); });
+  $("clearFilter").addEventListener("click", () => { ruleFilter = null; render(); });
+  const pickRule = (el) => { const id = el.dataset.rule; ruleFilter = ruleFilter === id ? null : id; render(); };
+  $("ruleTable").addEventListener("click", (e) => { const tr = e.target.closest("tr.ruleRow"); if (tr) pickRule(tr); });
+  $("ruleTable").addEventListener("keydown", (e) => { const tr = e.target.closest("tr.ruleRow"); if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pickRule(tr); } });
+
+  $("scDeals").addEventListener("change", (e) => { const sel = e.target.closest("select[data-deal]"); if (!sel) return; if (sel.value) choices[sel.dataset.deal] = sel.value; else delete choices[sel.dataset.deal]; sel.closest("tr").classList.toggle("picked", !!sel.value); drawScenarioResults(ctx()); });
+  document.querySelectorAll("[data-preset]").forEach((b) => b.addEventListener("click", () => {
+    const c = ctx(), list = scenarioDeals(c);
+    for (const k of Object.keys(choices)) delete choices[k];
+    if (b.dataset.preset === "commit") list.filter((d) => d.closeDate <= c.periodEnd && d.forecastCategory === "Commit" && !d.flags.length).forEach((d) => (choices[d.id] = "won"));
+    if (b.dataset.preset === "flagged") list.filter((d) => d.closeDate <= c.periodEnd && d.flags.length).forEach((d) => (choices[d.id] = "lost"));
+    drawScenarioTable(c); drawScenarioResults(c);
+  }));
+  ["capTarget", "capAttr", "capProd", "capHires", "capMonth"].forEach((id) => $(id).addEventListener(id === "capMonth" ? "change" : "input", () => renderCapacity(ctx())));
+
+  // ---------- Guided tour ----------
+  const tl = () => { const c = ctx(); return { c, l: E.landing(deals, c), cv: E.coverage(deals, c), cf: E.confidence(deals, c, FA) }; };
+  const TOUR = [
+    { tab: "start", sel: ".start-intro", title: "What this is", text: () => "A revenue operations command view for a sales team, built with AI on invented data. It shows how I'd run revenue operations, and how far AI can take the build. About two minutes, fourteen short stops." },
+    { tab: "summary", sel: "#sumVerdict", title: "Answer first", text: () => { const { cv, l } = tl(); return `The first screen gives the answer: ${pct1(cv.attainmentToDate)} of quota booked, likely to land at ${gbpK(l.likely)}. A leader sees where we'll finish before any detail.`; } },
+    { tab: "summary", sel: "#decTable", card: true, title: "Then what to decide", text: () => "Most reports stop at what happened. This one lists the decisions needed this week, who owns each, and a link to the evidence." },
+    { tab: "summary", sel: "#landChart", card: true, title: "A range, and how far to trust it", text: () => { const { l, cf } = tl(); return `A forecast is a range, not one number: ${gbpK(l.floor)} to ${gbpK(l.stretch)}. The confidence score, ${cf.score}/100, says how much of it is backed by clean data and buyer evidence.`; } },
+    { tab: "summary", sel: "#teamTable", card: true, title: "Where the problem sits", text: () => "Problems usually sit in one team, not everywhere. Growth is flagged, and the Why column names every threshold it missed." },
+    { tab: "coverage", sel: "#bars", card: true, title: "Coverage with and without the problems", text: () => { const { cv } = tl(); return `On paper coverage is ${x(cv.rawCoverage)}. Take out deals with problems and it's ${x(cv.cleanCoverage)}, against ${x(cv.required)} needed. That gap is the case for pipeline hygiene.`; } },
+    { tab: "hygiene", sel: "#actionTable", card: true, title: "Every flag has a next step", text: () => "A red flag on its own is noise. Each one comes with the action that fixes it, ranked by priority and deal value." },
+    { tab: "commission", sel: ".viewbar", title: "Commission, seen by the right people", text: () => "Executives see every team. Switch to a team lead and you see only that team and its reps. In production, sign-in would enforce it." },
+    { tab: "marketing", sel: "#mkStack", card: true, title: "Marketing judged on outcomes", text: () => "Not lead counts: what marketing-sourced pipeline has landed, what's likely, what may not land and what was lost, by team and by SDR." },
+    { tab: "renewals", sel: "#rnTable", card: true, title: "Keeping customers", text: () => "Every renewal in the next six months gets a health score, the warning signs behind it, and the action that would save it." },
+    { tab: "metrics", sel: "#calTable", card: true, title: "Calibrate before you forecast", text: () => `Forecast categories are checked against what actually closed. Commit has landed ${pct(CAL.rates.Commit)} of the time, not the ${pct(E.CAT_RATE.Commit)} assumed, so every landing figure uses the real rate.` },
+    { tab: "planning", sel: "#scDeals", card: true, title: "What if, and next year", text: () => "Mark deals won, lost or pulled in and watch the landing and commission move. Below it, next year's hiring plan with ramp and attrition." },
+    { tab: "data", sel: "#impText", card: true, title: "It runs on real data", text: () => "Load a CSV export from a CRM and the same checks run on real deals. The file never leaves the browser." },
+    { tab: "method", sel: "#p-method .card", title: "How it was built", text: () => "Every formula, who sees what, and how I built it: I made the decisions, the AI wrote the code, and every number was tested. Thanks for taking the tour." },
+  ];
+  let tourAt = -1;
+  function tourGo(i) {
+    tourAt = i; const st = TOUR[i];
+    if (location.hash.slice(1) !== st.tab) location.hash = st.tab;
+    show(st.tab);
+    document.querySelectorAll(".tour-hl").forEach((e) => e.classList.remove("tour-hl"));
+    let el = document.querySelector(st.sel); if (el && st.card) el = el.closest(".card") || el;
+    if (el) { el.classList.add("tour-hl"); const rm = matchMedia("(prefers-reduced-motion: reduce)").matches; setTimeout(() => el.scrollIntoView({ behavior: rm ? "auto" : "smooth", block: "center" }), 30); }
+    $("tourStep").textContent = `${i + 1} of ${TOUR.length}`;
+    $("tourTitle").textContent = st.title;
+    $("tourText").textContent = st.text();
+    $("tourBack").disabled = i === 0;
+    $("tourNext").textContent = i === TOUR.length - 1 ? "Finish" : "Next";
+    $("tour").hidden = false;
+  }
+  function tourEnd() { $("tour").hidden = true; tourAt = -1; document.querySelectorAll(".tour-hl").forEach((e) => e.classList.remove("tour-hl")); }
+  document.querySelectorAll("[data-tour-start]").forEach((b) => b.addEventListener("click", () => tourGo(0)));
+  $("tourNext").addEventListener("click", () => (tourAt < TOUR.length - 1 ? tourGo(tourAt + 1) : tourEnd()));
+  $("tourBack").addEventListener("click", () => tourAt > 0 && tourGo(tourAt - 1));
+  $("tourClose").addEventListener("click", tourEnd);
+  document.addEventListener("keydown", (e) => { if (tourAt < 0) return; if (e.key === "Escape") tourEnd(); else if (e.key === "ArrowRight") $("tourNext").click(); else if (e.key === "ArrowLeft") $("tourBack").click(); });
+
+  $("projPick").innerHTML = Object.entries(SERIES).map(([k, s]) => `<option value="${k}">${s.label}</option>`).join("");
+  $("projPick").addEventListener("change", renderProjection);
+  $("qaList").innerHTML = /*QA*/[].map((r) => `<li><span class="ok">${r[0]}</span><span>${esc(r[1])}</span></li>`).join("");
+  $("qaCount").textContent = $("qaList").children.length;
+  $("startTests").textContent = $("qaList").children.length;
+  $("dataLine").textContent = `${deals.length} open deals, ${E.REPS.length} reps in ${E.TEAMS.length} teams, ${E.SDRS.length} SDRs, ${leads.length} leads, ${RENEW.length} upcoming renewals, ${opps.length} closed opportunities and eleven quarters of revenue history.`;
+
+  renderActivity();
+  const RR = renderRenewals();
+  const WL = renderWinLoss();
+  render();
+  renderProjection();
+  show(location.hash.slice(1));
+})();
+</script>
