@@ -6,7 +6,7 @@ A revenue operations command view for a B2B SaaS sales team: where the quarter w
 
 ## What it shows
 
-Open `index.html` in any browser. Start with **Start here**, or take the two-minute guided tour.
+Open `index.html` in any browser. Start with **Start here**, or take the three-minute guided tour.
 
 | Tab | Question it answers |
 |---|---|

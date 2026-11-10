@@ -395,7 +395,7 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
     <label for="stale">Stale after (days)<input id="stale" type="number" min="1" max="90" step="1" value="14"><span class="hint">No logged activity</span></label>
   </div>
 
-  <div class="tabhint" id="tabhint">Click a tab to switch view; the tabs stay pinned as you scroll. Hover or tap any <span class="helpdemo" aria-hidden="true">?</span> for a definition, or <button type="button" class="tourlink" data-tour-start>take the two-minute tour</button></div>
+  <div class="tabhint" id="tabhint">Click a tab to switch view; the tabs stay pinned as you scroll. Hover or tap any <span class="helpdemo" aria-hidden="true">?</span> for a definition, or <button type="button" class="tourlink" data-tour-start>take the three-minute tour</button></div>
   <div class="stickybar" id="stickybar">
   <nav class="tabs" role="tablist">
     <button role="tab" id="t-start" aria-selected="true" data-tab="start"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z"/></svg>Start here</button>
@@ -435,7 +435,7 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
       <p class="byline">Built by John Webb</p>
       <p>This is a working demonstration of how a B2B SaaS sales organisation can see the whole quarter in one place: where it will land, how much to trust that, which deals, reps and managers need attention, and what to do next. Every number is calculated live by a tested engine, and every recommendation comes from the figures, not from hand-written commentary.</p>
       <div class="notice" role="note" style="margin-top:4px"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 12h1v5h1"/></svg><p><b>None of this is real.</b> The company, its customers, reps, managers, SDRs, competitors, deals and every figure were invented for this demo. Any resemblance to real organisations, people or results is purely coincidental.</p></div>
-      <div class="btnrow"><button type="button" class="btn" data-tour-start>Take the two-minute tour</button><span class="sub">It walks through each tab and explains why it's there.</span></div>
+      <div class="btnrow"><button type="button" class="btn" data-tour-start>Take the three-minute tour</button><span class="sub">It walks through each tab and explains why it's there.</span></div>
     </div>
 
     <div class="grid3">
@@ -840,7 +840,7 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
       </div>
       <div class="grid2">
         <div class="card">
-          <div class="head"><h3>Stage conversion <button type="button" class="help" data-def="stageConversion"></button></h3><div class="sub">Closed opportunities, Q1 FY25 to Q3 FY26</div></div>
+          <div class="head"><h3>Stage conversion <button type="button" class="help" data-def="stageConversion"></button></h3><div class="sub">Closed opportunities, Q3 FY24 to Q3 FY26</div></div>
           <div class="tablewrap"><table id="funnelTable"></table></div>
         </div>
         <div class="card">
@@ -873,7 +873,7 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
 
     <div class="mgroup" id="m-winloss">
       <h2>Win/loss and competitors</h2>
-      <p class="sub" style="margin:0">Closed deals from Q1 FY25 to Q3 FY26 that reached Qualification.</p>
+      <p class="sub" style="margin:0">Closed deals from Q3 FY24 to Q3 FY26 that reached Qualification.</p>
       <div class="grid2">
         <div class="card">
           <div class="head"><h3>Why we lose</h3><div class="sub">Ranked by value lost</div></div>
@@ -1108,9 +1108,9 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
       <summary>Formula reference <span class="sub">(plain-English versions are on the Definitions tab)</span></summary>
       <dl class="defs">
         <div class="defgroup">Executive summary</div>
-        <dt>Landing range</dt><dd>Floor: <code>closed + clean Commit × 85%</code>. Likely: <code>closed + Σ amount × category rate</code> with Commit 85%, Best Case 45%, Pipeline 15%, and flagged deals halved. Stretch: <code>closed + all Commit + all Best Case + Pipeline × 15%</code>. Built so floor ≤ likely ≤ stretch always holds.</dd>
+        <dt>Landing range</dt><dd>Floor: <code>closed + clean Commit × Commit rate</code>. Likely: <code>closed + Σ amount × category rate</code>, with flagged deals halved and Omitted at 0%. Stretch: <code>closed + all Commit + all Best Case + Pipeline × Pipeline rate</code>. The rates are calibrated from past deals (about 80% Commit, 46% Best Case, 14% Pipeline), not the commonly assumed 85/45/15. Built so floor ≤ likely ≤ stretch always holds.</dd>
         <dt>Pipeline confidence</dt><dd>Weighted score out of 100: clean coverage against what's needed (30), in-quarter value with no hygiene issues (20), Commit and Best Case value with full MEDDPICC (20), forecast accuracy over the last four quarters (15), and the share of quota still to find already sitting in clean Commit (15). 75+ is high, 55+ medium.</dd>
-        <dt>Team flags</dt><dd>A team is flagged for: likely landing under 90%, clean coverage under what's needed, fewer than 60% of deals clean, or two or more reps behind for tenure. One flag is "watch"; three or more is "needs support".</dd>
+        <dt>Team flags</dt><dd>A team is flagged for: likely landing under 90%, clean coverage under what's needed, fewer than 60% of deals clean, or two or more reps behind for tenure. One or two flags is "watch"; three or more is "needs support".</dd>
         <dt>Tenure</dt><dd>Expected attainment rises in a straight line from 40% at hire to 100% at 12 months. A rep is ahead at 110% or more of that expectation, behind under 90%. Ramp is the first nine months.</dd>
         <div class="defgroup">Marketing</div>
         <dt>Funnel</dt><dd>MQL: marketing qualified lead. SAL: accepted and worked by an SDR. SQL: qualified by the SDR and handed to an AE. Opportunity: accepted by the AE. Rates are from the previous stage.</dd>
@@ -1519,7 +1519,7 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
     return { quarters, cohorts };
   }
 
-  // Closed opportunities Q1 FY25 to Q3 FY26, used for funnel, win rate, cycle and time in stage.
+  // Closed opportunities Q3 FY24 to Q3 FY26, used for funnel, win rate, cycle and time in stage.
   function generateOppHistory(seed = 11) {
     const r = rng(seed);
     const conv = [0.62, 0.66, 0.74, 0.78, 0.80], days = [14, 22, 26, 18, 16];
@@ -3018,7 +3018,7 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
   const STATUS = { good: "On track", warn: "Watch", bad: "Needs support" };
   const SUGGEST = {
     land: "Review Best Case deals for any that can come into the quarter with a confirmed paper process.",
-    coverage: "Protect a weekly prospecting block for each rep and look for next-quarter deals that could close earlier.",
+    coverage: "Look for next-quarter deals that could close earlier; new pipeline created now rarely closes this quarter. Protect a weekly prospecting block so next quarter starts better covered.",
     hygiene: "Run a 30-minute pipeline scrub with each rep this week, working from the next-steps list.",
     tenure: "Pair the reps behind for tenure with a top performer for weekly deal reviews.",
   };
@@ -3074,7 +3074,8 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
 
     $("confBox").innerHTML = `<div class="conf"><div><span class="big">${cf.score}</span><span class="of">/100</span></div>${pill(cf.level === "High" ? "good" : cf.level === "Medium" ? "warn" : "bad", cf.level)}<div class="mini thick"><span class="${cf.score >= 75 ? "ok" : ""}" style="width:${cf.score}%"></span><i class="mark" style="left:55%" title="Medium from 55"></i><i class="mark" style="left:75%" title="High from 75"></i></div></div>`;
     $("confTable").innerHTML = `<thead><tr><th>What it checks</th><th class="n">Weight</th><th style="min-width:110px">Score</th><th class="n">Points</th></tr></thead><tbody>` +
-      cf.parts.map((p) => `<tr><td>${p.label}</td><td class="n">${p.weight}</td><td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span class="${p.value >= 0.75 ? "ok" : ""}" style="width:${p.value * 100}%"></span></div><span class="num">${pct(p.value)}</span></div></td><td class="n">${(p.weight * p.value).toFixed(1)}</td></tr>`).join("") + "</tbody>";
+      cf.parts.map((p) => `<tr><td>${p.label}<div class="sub">${({ coverage: `${x(cv.cleanCoverage)} clean against ${x(cv.required)} needed`, hygiene: "share of in-quarter value with no issues",
+        evidence: "share of that value meeting its stage's MEDDPICC minimum", track: `${pct1(FA)} accuracy; 80% or less scores nothing, 100% scores in full`, commit: `clean Commit (at ${pct(CAL.rates.Commit)}) ÷ ${gbpK(cv.remaining)} still to find` })[p.key] || ""}</div></td><td class="n">${p.weight}</td><td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span class="${p.value >= 0.75 ? "ok" : ""}" style="width:${p.value * 100}%"></span></div><span class="num">${pct(p.value)}</span></div></td><td class="n">${(p.weight * p.value).toFixed(1)}</td></tr>`).join("") + "</tbody>";
 
     // Weaknesses, each generated from a real figure.
     const weak = [];
@@ -3263,7 +3264,7 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
     $("wlComps").innerHTML = `<thead><tr><th>Competitor</th><th class="n">Deals</th><th class="n">Win rate</th><th class="n">Lost to them</th><th class="n">Value lost</th></tr></thead><tbody>` +
       W.competitors.map((c) => `<tr${lvA(cmpLv(c))}><td>${c.competitor}</td><td class="n">${c.deals}</td><td class="n"><span class="pill st-${cmpLv(c)}">${pct(c.winRate)}</span></td><td class="n">${c.lostToThem}</td><td class="n">${gbpK(c.lostValue)}</td></tr>`).join("") + "</tbody>";
     const worst = W.competitors.filter((c) => c.competitor !== "No competitor identified").sort((a, b) => a.winRate - b.winRate)[0];
-    $("wlNote").innerHTML = `Overall win rate on these deals is ${pct(W.overallWinRate)}. ${worst.competitor} is the one to prepare for: ${pct(worst.winRate)} across ${worst.deals} deals. Competitors are anonymised as Rival A, B and C.`;
+    $("wlNote").innerHTML = `Overall win rate on these deals is ${pct(W.overallWinRate)} across Q3 FY24 to Q3 FY26; the trailing twelve-month rate on the KPI tiles is ${pct(TTM_WR)}, as win rates have improved. ${worst.competitor} is the one to prepare for: ${pct(worst.winRate)} across ${worst.deals} deals. Competitors are anonymised as Rival A, B and C.`;
     $("calTable").innerHTML = `<thead><tr><th>Category</th><th class="n">Assumed</th><th class="n">Calibrated</th><th class="n">History</th><th class="n">Difference</th></tr></thead><tbody>` +
       ["Commit", "Best Case", "Pipeline"].map((k) => { const a = E.CAT_RATE[k], c = CAL.rates[k], n = CAL.counts[k];
         return `<tr><td>${k}</td><td class="n">${pct(a)}</td><td class="n"><b>${pct(c)}</b></td><td class="n">${n.won} won of ${n.deals}</td><td class="n">${sgn(c - a, (v) => (v * 100).toFixed(1) + " pts")}</td></tr>`; }).join("") + "</tbody>";
@@ -3614,7 +3615,7 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
   // ---------- Guided tour ----------
   const tl = () => { const c = ctx(); return { c, l: E.landing(deals, c), cv: E.coverage(deals, c), cf: E.confidence(deals, c, FA) }; };
   const TOUR = [
-    { tab: "start", sel: ".start-intro", title: "What this is", text: () => `A revenue operations command view for a sales team, built with AI on invented data. It shows how I'd run revenue operations, and how far AI can take the build. About two minutes, ${TOUR.length} short stops.` },
+    { tab: "start", sel: ".start-intro", title: "What this is", text: () => `A revenue operations command view for a sales team, built with AI on invented data. It shows how I'd run revenue operations, and how far AI can take the build. About three minutes, ${TOUR.length} short stops.` },
     { tab: "summary", sel: "#sumVerdict", title: "Answer first", text: () => { const { cv, l } = tl(); return `The first screen gives the answer: ${pct1(cv.attainmentToDate)} of quota booked, likely to land at ${gbpK(l.likely)}. A leader sees where we'll finish before any detail.`; } },
     { tab: "summary", sel: "#decTable", card: true, title: "Then what to decide", text: () => "Most reports stop at what happened. This one lists the decisions needed this week, who owns each, and a link to the evidence." },
     { tab: "summary", sel: "#landChart", card: true, title: "A range, and how far to trust it", text: () => { const { l, cf } = tl(); return `A forecast is a range, not one number: ${gbpK(l.floor)} to ${gbpK(l.stretch)}. The confidence score, ${cf.score}/100, says how much of it is backed by clean data and buyer evidence.`; } },

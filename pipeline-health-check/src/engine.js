@@ -344,7 +344,7 @@
     return { quarters, cohorts };
   }
 
-  // Closed opportunities Q1 FY25 to Q3 FY26, used for funnel, win rate, cycle and time in stage.
+  // Closed opportunities Q3 FY24 to Q3 FY26, used for funnel, win rate, cycle and time in stage.
   function generateOppHistory(seed = 11) {
     const r = rng(seed);
     const conv = [0.62, 0.66, 0.74, 0.78, 0.80], days = [14, 22, 26, 18, 16];
