@@ -13,6 +13,7 @@ Open `index.html` in any browser. Start with **Start here**, or take the two-min
 | Start here | What is this, and why was it built? |
 | How it works | How is it calculated, and who sees what? |
 | Executive summary | Where will we land, how far can we trust it, and what needs deciding this week? |
+| Manager view | How is each rep trending across their last four quarters? Metrics only, and labelled that way. |
 | Forecast coverage | Is there enough pipeline, with and without the deals that have problems? |
 | Hygiene and next steps | Which deals need attention, and what is the next step on each? |
 | Commission | What will each rep and manager earn? Executives see every team; a team lead sees only their own. |
@@ -22,6 +23,10 @@ Open `index.html` in any browser. Start with **Start here**, or take the two-min
 | Revenue metrics | GRR, NRR, cohorts, win rates, cycle length, CAC payback, net magic number, Rule of 40, win/loss, deal desk and MEDDPICC. |
 | Planning | What if deals slip, and how many hires does next year need? |
 | Your data | Would this work on a real pipeline? Load a CRM export as CSV; it never leaves the browser. |
+| Definitions | What does each measure, hygiene rule and MEDDPICC element mean? |
+| Sample calculations | How is each number worked out, and where do the Good, Watch and Act lines sit? |
+
+The tabs stay pinned at the top as you scroll. Every measure has a **?** beside it: hover or tap for a one-line definition, click for the full entry. The **Show** buttons under the tabs filter rated rows and tiles to Good, Watch, Act or the watch list (Watch and Act together). The deal list on the hygiene tab also filters by issue, team, owner, stage and forecast category.
 
 ## What I decided, and why
 
@@ -39,7 +44,7 @@ Open `index.html` in any browser. Start with **Start here**, or take the two-min
 
 - `src/engine.js`: the calculation engine. Plain functions with no page code, so every tab draws from the same numbers.
 - `src/page.html`: the page.
-- `tests/test.js`: 78 automated tests, covering worked examples, edge cases and reconciliation of totals across tabs.
+- `tests/test.js`: 89 automated tests, covering worked examples, edge cases and reconciliation of totals across tabs.
 - `build.js`: runs the tests and, only if they all pass, builds `index.html` with the engine and results inlined.
 - `fonts/`: Archivo and IBM Plex, both under the SIL Open Font License. They are bundled so the page loads nothing from third parties.
 
@@ -54,4 +59,4 @@ Needs Node.js 18 or later. There are no other dependencies.
 
 ## Known limitations
 
-Thresholds are common SaaS rules of thumb or stated demo settings. Renewal rates by health band are assumed. Source attribution is single-touch, and commission estimates treat each deal on its own. Access by role is a demo switch; a live system would enforce it at sign-in.
+Thresholds are common SaaS rules of thumb or stated demo settings, all held in one place in the engine so every tab uses the same lines. The manager view reads reps from their metrics alone; it can't see leave, territory changes or deal timing. Renewal rates by health band are assumed. Source attribution is single-touch, and commission estimates treat each deal on its own. Access by role is a demo switch; a live system would enforce it at sign-in.

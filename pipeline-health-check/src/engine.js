@@ -19,15 +19,18 @@
   const stageIndex = (name) => STAGES.findIndex((s) => s.name === name);
 
   // MEDDPICC: 0 = unknown, 1 = partly evidenced, 2 = confirmed. REQ = minimum expected at each stage.
+  // key = the letter in the acronym; code = a unique two-letter label, so the two Ds and two Cs can't be confused.
+  // The three "decision" elements answer different questions: Economic buyer = WHO makes the final call,
+  // Decision criteria = WHAT they will judge us on, Decision process = HOW and WHEN the decision gets made.
   const MEDDPICC = [
-    { key: "M", name: "Metrics", action: "Agree with the buyer the number this deal moves and by how much, and write it into the business case." },
-    { key: "E", name: "Economic buyer", action: "Get a meeting with the economic buyer. Ask the champion to sponsor the introduction." },
-    { key: "D", name: "Decision criteria", action: "Get the decision criteria in writing and score our fit against each one." },
-    { key: "D", name: "Decision process", action: "Map who signs off, in what order and by when. Put it in the mutual action plan." },
-    { key: "P", name: "Paper process", action: "Confirm procurement, legal, security review and the named signatory, with dates." },
-    { key: "I", name: "Identify pain", action: "Confirm the pain in the buyer's own words and the cost of doing nothing." },
-    { key: "C", name: "Champion", action: "Test the champion: ask them to set up a meeting we can't get ourselves." },
-    { key: "C", name: "Competition", action: "Find out who else is in the deal, including doing nothing, and position against them." },
+    { key: "M", code: "M", short: "Metrics", name: "Metrics", action: "Agree with the buyer the number this deal moves and by how much, and write it into the business case." },
+    { key: "E", code: "EB", short: "Econ. buyer", name: "Economic buyer", action: "Get a meeting with the economic buyer, the person who owns the budget and makes the final call. Ask the champion to sponsor the introduction." },
+    { key: "D", code: "DC", short: "Criteria", name: "Decision criteria", action: "Get the decision criteria in writing (what they will judge us on) and score our fit against each one." },
+    { key: "D", code: "DP", short: "Process", name: "Decision process", action: "Map the steps to a yes: who is involved at each step, in what order and by when. Put it in the mutual action plan." },
+    { key: "P", code: "PP", short: "Paper", name: "Paper process", action: "Confirm procurement, legal and security review, and the person who signs the contract, with dates." },
+    { key: "I", code: "IP", short: "Pain", name: "Identify pain", action: "Confirm the pain in the buyer's own words and the cost of doing nothing." },
+    { key: "C", code: "CH", short: "Champion", name: "Champion", action: "Test the champion: ask them to set up a meeting we can't get ourselves." },
+    { key: "C", code: "CO", short: "Competition", name: "Competition", action: "Find out who else is in the deal, including doing nothing, and position against them." },
   ];
   const MEDDPICC_REQ = {
     Discovery: [0, 0, 0, 0, 0, 1, 0, 0],
@@ -466,17 +469,61 @@
     return { slope, intercept, fit, r2: sst ? 1 - ssr / sst : 1, se, projection };
   }
 
-  // ---------- Benchmarks (common rules of thumb, not laws) ----------
-  const BENCH = {
-    nrr: { good: 1.10, ok: 1.00, up: true }, grr: { good: 0.90, ok: 0.85, up: true }, payback: { good: 18, ok: 30, up: false },
-    magic: { good: 0.75, ok: 0.50, up: true }, ruleOf40: { good: 0.40, ok: 0.25, up: true }, winRate: { good: 0.30, ok: 0.20, up: true },
-    forecastAcc: { good: 0.95, ok: 0.90, up: true }, renewAcc: { good: 0.97, ok: 0.93, up: true },
+  // ---------- Thresholds: one place for every Good / Watch / Act line on the page ----------
+  // up = higher is better. good = the Good line; ok = the Watch line; anything past ok is Act.
+  // Common SaaS rules of thumb or stated demo settings, not industry law. `why` explains where the line sits.
+  // unit: pct (0.25 = 25%), x (ratio), n (plain number), mo (months), d (days), h (hours), gbp (£), pts (score).
+  const THRESHOLDS = {
+    landing: { label: "Likely landing (% of quota)", good: 1.00, ok: 0.90, up: true, unit: "pct", words: ["On track", "Just short", "Off track"], example: 0.96,
+      why: "100% means the quota is covered. Within 10% is close enough to recover with a good last month; further out needs a plan." },
+    attainment: { label: "Quarter attainment (rep or team)", good: 1.00, ok: 0.90, up: true, unit: "pct", example: 0.84,
+      why: "Same lines as the landing forecast, so a rep, a team and the company are judged the same way." },
+    confidence: { label: "Pipeline confidence", good: 75, ok: 55, up: true, unit: "pts", words: ["High", "Medium", "Low"], example: 62,
+      why: "At 75 most of the forecast rests on clean deals with buyer evidence. Below 55, more of it is hope than evidence." },
+    dealHealth: { label: "Deal health score", good: 80, ok: 60, up: true, unit: "pts", example: 64,
+      why: "One light issue keeps a deal above 80. Two issues, or one serious one, drops it below; below 60 it needs a manager's eye." },
+    accountHealth: { label: "Account health score", good: 70, ok: 45, up: true, unit: "pts", words: ["Healthy", "At risk", "Critical"], example: 47,
+      why: "One warning sign leaves an account above 70. Several together, such as falling usage plus no sponsor, push it below 45." },
+    tenure: { label: "Attainment vs tenure expectation", good: 1.10, ok: 0.90, up: true, unit: "pct", words: ["Ahead for tenure", "In line for tenure", "Behind for tenure"], example: 0.94,
+      why: "Within 10% either side of what's expected at that tenure is normal variation; outside it is worth a conversation." },
+    nrr: { label: "Net revenue retention", good: 1.10, ok: 1.00, up: true, unit: "pct", example: 1.054,
+      why: "Above 100% existing customers grow on their own. 110% or more is the mark of a strong expansion motion." },
+    grr: { label: "Gross revenue retention", good: 0.90, ok: 0.85, up: true, unit: "pct", example: 0.863,
+      why: "Losing under 10% of ARR a year is healthy for mid-market SaaS. Losing over 15% means churn is eating growth." },
+    winRate: { label: "Win rate", good: 0.30, ok: 0.20, up: true, unit: "pct", example: 0.375,
+      why: "Roughly one in three qualified deals is a healthy B2B SaaS norm; one in five or fewer suggests weak qualification." },
+    cycle: { label: "Sales cycle (median days)", good: 90, ok: 120, up: false, unit: "d", example: 96,
+      why: "About a quarter from creation to close lets a deal be found and won in the same quarter. Past four months, forecasting gets hard." },
+    payback: { label: "CAC payback", good: 18, ok: 30, up: false, unit: "mo", example: 19.9,
+      why: "Earning back acquisition cost inside 18 months funds growth from revenue; beyond 30 months growth needs outside cash." },
+    magic: { label: "Net magic number", good: 0.75, ok: 0.50, up: true, unit: "x", example: 0.76,
+      why: "At 0.75 or more each £1 of sales and marketing adds 75p of ARR: spend more. Below 0.5, fix the engine first." },
+    ruleOf40: { label: "Rule of 40", good: 0.40, ok: 0.25, up: true, unit: "pct", example: 0.302,
+      why: "Growth plus free cash flow margin of 40% is the classic healthy-SaaS line; 25% or more is acceptable while scaling." },
+    forecastAcc: { label: "Forecast accuracy", good: 0.95, ok: 0.90, up: true, unit: "pct", example: 0.961,
+      why: "Within 5% of the call is what boards expect; within 10% is workable. Beyond that the forecast can't be planned on." },
+    renewAcc: { label: "Renewal forecast accuracy", good: 0.97, ok: 0.93, up: true, unit: "pct", example: 0.95,
+      why: "Renewals are more predictable than new business, so the bar is higher than for the bookings forecast." },
+    meetings: { label: "AE meetings a week", good: 4.5, ok: 3.5, up: true, unit: "n", example: 4.2,
+      why: "About one buyer meeting a day keeps a pipeline moving. A demo setting, not an industry standard." },
+    connect: { label: "SDR connect rate", good: 0.08, ok: 0.05, up: true, unit: "pct", example: 0.08,
+      why: "Around 8% of cold calls reaching a live conversation is typical; under 5% points to poor data or timing." },
+    show: { label: "Meeting show rate", good: 0.75, ok: 0.65, up: true, unit: "pct", example: 0.70,
+      why: "Three in four booked meetings should happen. Lower means meetings are booked with the wrong people or poorly confirmed." },
+    mqlToSql: { label: "MQL to SQL conversion", good: 0.28, ok: 0.22, up: true, unit: "pct", example: 0.25,
+      why: "A quarter or more of marketing leads becoming sales-qualified shows marketing and sales agree on who to target." },
+    firstTouch: { label: "Speed to first touch (hours)", good: 12, ok: 24, up: false, unit: "h", example: 18,
+      why: "Leads contacted the same working day convert far better; after a day most have gone cold." },
+    pipelinePerPound: { label: "Pipeline per £1 of spend", good: 20, ok: 10, up: true, unit: "gbp", example: 25,
+      why: "At a 30% win rate and typical margins, £20 of pipeline per £1 spent pays back; under £10 rarely does." },
   };
-  function rate(key, v) {
-    const b = BENCH[key]; if (!b || v == null || !isFinite(v)) return "warn";
-    if (b.up) return v >= b.good ? "good" : v >= b.ok ? "warn" : "bad";
-    return v <= b.good ? "good" : v <= b.ok ? "warn" : "bad";
+  const BENCH = THRESHOLDS; // older name kept for compatibility
+  function level(key, v) {
+    const b = THRESHOLDS[key]; if (!b || v == null || !isFinite(v)) return "warn";
+    if (b.up) return v >= b.good - 1e-9 ? "good" : v >= b.ok - 1e-9 ? "warn" : "bad";
+    return v <= b.good + 1e-9 ? "good" : v <= b.ok + 1e-9 ? "warn" : "bad";
   }
+  const rate = level;
 
   // ---------- Landing forecast ----------
   // Category conversion rates; flagged deals are halved. Floor <= likely <= stretch by construction.
@@ -512,7 +559,7 @@
       { key: "commit", label: "Quota still to find already in clean Commit", weight: 15, value: rem > 0 ? clamp((ld.floor - ld.closed) / rem) : 1 },
     ];
     const score = Math.round(sum(parts, (p) => p.weight * p.value));
-    return { score, level: score >= 75 ? "High" : score >= 55 ? "Medium" : "Low", parts };
+    return { score, level: { good: "High", warn: "Medium", bad: "Low" }[level("confidence", score)], parts };
   }
 
   // ---------- Tenure ----------
@@ -525,8 +572,8 @@
   const tenureExpectation = (m) => (m >= 12 ? 1 : Math.min(1, 0.4 + (m / 12) * 0.6));
   function repTenure(rep, asOf) {
     const months = tenureMonths(rep.start, asOf), expected = tenureExpectation(months), ratio = rep.ttmAttainment / expected;
-    const verdict = ratio >= 1.1 ? "Ahead for tenure" : ratio >= 0.9 ? "In line for tenure" : "Behind for tenure";
-    return { months, expected, ratio, verdict, level: ratio >= 1.1 ? "good" : ratio >= 0.9 ? "warn" : "bad", ramping: months < RAMP_MONTHS };
+    const lv = level("tenure", ratio), verdict = THRESHOLDS.tenure.words[["good", "warn", "bad"].indexOf(lv)];
+    return { months, expected, ratio, verdict, level: lv, ramping: months < RAMP_MONTHS };
   }
 
   // ---------- Teams ----------
@@ -797,7 +844,7 @@
     if (a.latePayment) hit(10, "Late payment");
     if (a.championLeft) hit(20, "Champion has left");
     const score = Math.max(0, 100 - sum(drivers, (d) => d.pts));
-    return { score, band: score >= 70 ? "Healthy" : score >= 45 ? "At risk" : "Critical", drivers: drivers.sort((x, y) => y.pts - x.pts) };
+    return { score, band: THRESHOLDS.accountHealth.words[["good", "warn", "bad"].indexOf(level("accountHealth", score))], drivers: drivers.sort((x, y) => y.pts - x.pts) };
   }
   const RENEW_RATE = { Healthy: 0.97, "At risk": 0.8, Critical: 0.5 };
   const RENEW_ACTION = {
@@ -949,7 +996,276 @@
     });
   }
 
+  // ---------- Manager view: each rep's last four quarters, from the metrics alone ----------
+  // Quarter index i: 0 = Q1 FY24 ... 7 = Q4 FY25 ... 10 = Q3 FY26 (calendar fiscal year).
+  const qStart = (i) => (2024 + Math.floor(i / 4)) + "-" + String((i % 4) * 3 + 1).padStart(2, "0") + "-01";
+  const qEnd = (i) => addDays(qStart(i + 1), -1);
+  const REP_QS = [NQ - 4, NQ - 3, NQ - 2, NQ - 1];
+  // A rep counts in a quarter if they started within its first 45 days; earlier quarters show as "not started".
+  const inQuarter = (rep, i) => rep.start <= addDays(qStart(i), 45);
+  // Each rep's direction of travel, in attainment points a quarter. Values are then shifted so the four quarters
+  // average exactly to the rep's trailing twelve-month attainment used everywhere else on the page.
+  const REP_DRIFT = { "Priya Shah": 1, "Marcus Bell": -6, "Daniel Osei": 9, "Tom Okafor": 0, "Elena Ruiz": 5, "Sofia Marin": 18, "Hannah Kerr": -9, "Liam Carter": 14, "Aisha Rahman": 12 };
+
+  // Straight-line slope through equally spaced points (per step). Used to label each rep's trend.
+  function slopeOf(ys) {
+    const n = ys.length; if (n < 2) return 0;
+    const mx = (n - 1) / 2, my = sum(ys) / n;
+    return sum(ys, (y, i) => (i - mx) * (y - my)) / sum(ys, (_, i) => (i - mx) ** 2);
+  }
+  const TREND_STEP = 0.04; // 4 points a quarter either way counts as a real trend
+  function trendOf(ys) {
+    if (ys.length < 2) return { slope: 0, label: "Too early", level: "warn" };
+    const s = slopeOf(ys);
+    return s >= TREND_STEP ? { slope: s, label: "Improving", level: "good" } : s <= -TREND_STEP ? { slope: s, label: "Declining", level: "bad" } : { slope: s, label: "Steady", level: "warn" };
+  }
+
+  function repQuarters(seed = 61) {
+    const r = rng(seed);
+    return REPS.map((rep) => {
+      const live = REP_QS.filter((i) => inQuarter(rep, i)), n = live.length, d = REP_DRIFT[rep.name] || 0;
+      let pts = live.map((_, k) => Math.round(d * (k - (n - 1) / 2) + (r() - 0.5) * 8));
+      const target = Math.round(rep.ttmAttainment * 100) * n, shift = Math.round((target - sum(pts)) / n);
+      pts = pts.map((p) => p + shift); pts[n - 1] += target - sum(pts); // exact: the quarters average to the TTM figure
+      let k = 0;
+      const quarters = REP_QS.map((i) => ({ label: qLabel(i), attainment: inQuarter(rep, i) ? pts[k++] / 100 : null }));
+      return { name: rep.name, team: rep.team, quarters };
+    });
+  }
+
+  // Splits the company's trailing twelve months of closed deals (the same deals behind the TTM win rate on the
+  // metrics tab) across the reps in seat. Totals reconcile exactly: rep deals and wins add up to the company's.
+  // Stronger reps win a larger share; deal size and cycle follow the rep's segment.
+  const SEG_DEAL = { Enterprise: 115000, "Mid-Market": 68000, Growth: 34000 }, SEG_CYCLE = { Enterprise: 112, "Mid-Market": 92, Growth: 71 };
+  function splitWhole(total, weights) {
+    const w = sum(weights), raw = weights.map((x) => (w ? (total * x) / w : 0)), out = raw.map(Math.floor);
+    raw.map((x, i) => [x - out[i], i]).sort((a, b) => b[0] - a[0]).slice(0, total - sum(out)).forEach(([, i]) => out[i]++);
+    return out;
+  }
+  function repStats(opps, asOf) {
+    const from = NQ - 4, closed = opps.filter((o) => o.closeQi >= from && o.reached >= 1), C = closed.length, W = closed.filter((o) => o.won).length;
+    const seat = REPS.map((p) => Math.max(0, Math.min(12, tenureMonths(p.start, qEnd(NQ - 1)) + 1)) / 12);
+    const n = splitWhole(C, REPS.map((p, i) => p.quotaShare * seat[i]));
+    const attAvg = sum(REPS, (p, i) => p.ttmAttainment * n[i]) / (sum(n) || 1);
+    const won = splitWhole(W, REPS.map((p, i) => n[i] * Math.pow(p.ttmAttainment / attAvg, 0.9)));
+    return REPS.map((p, i) => ({ name: p.name, closed: n[i], won: Math.min(won[i], n[i]),
+      avgWon: Math.round((SEG_DEAL[p.team] * (0.85 + 0.15 * p.ttmAttainment)) / 500) * 500,
+      cycle: Math.round(SEG_CYCLE[p.team] * (1.2 - 0.2 * Math.min(1.2, p.ttmAttainment)) + (tenureMonths(p.start, asOf) < 12 ? 9 : 0)) }));
+  }
+
+  // One row per rep. ctx gives this quarter's quota and closed won; deals gives open pipeline and hygiene.
+  function managerView(opps, deals, ctx) {
+    const RQ = repQuarters(), ST = repStats(opps, ctx.asOf);
+    const reps = REPS.map((rep, idx) => {
+      const q = RQ[idx].quarters, vals = q.filter((x) => x.attainment != null).map((x) => x.attainment);
+      const ten = repTenure(rep, ctx.asOf), tr = trendOf(vals);
+      const st = ST[idx];
+      const mine = deals.filter((d) => d.owner === rep.name).map((d) => checkDeal(d, ctx)), inQ = mine.filter(inPeriodOf(ctx));
+      const quota = ctx.quota * rep.quotaShare, q4 = quota ? (ctx.closedWon * rep.closedShare) / quota : 0;
+      const remaining = Math.max(0, quota - ctx.closedWon * rep.closedShare);
+      return {
+        name: rep.name, team: rep.team, start: rep.start, months: ten.months, ramping: ten.ramping, quarters: q,
+        ttm: vals.length ? sum(vals) / vals.length : 0, tenure: ten, trend: tr, q4ToDate: q4,
+        closed: st.closed, won: st.won, winRate: st.closed ? st.won / st.closed : 0, avgWon: st.avgWon, cycle: st.cycle,
+        openDeals: mine.length, cleanRate: mine.length ? mine.filter((d) => !d.flags.length).length / mine.length : 1,
+        q4Pipeline: sum(inQ, (d) => d.amount || 0), q4Coverage: remaining > 0 ? sum(inQ, (d) => d.amount || 0) / remaining : Infinity,
+        level: ten.level,
+      };
+    });
+    const rank = reps.slice().sort((a, b) => b.ttm - a.ttm).map((x) => x.name);
+    reps.forEach((x) => { x.rank = rank.indexOf(x.name) + 1; });
+    const teams = TEAMS.map((t) => {
+      const rs = reps.filter((x) => x.team === t.name), share = (k) => sum(REPS.filter((p) => p.team === t.name), (p) => p[k]);
+      // Team quarter attainment weights each rep by quota share, counting only reps in seat that quarter.
+      const quarters = REP_QS.map((_, qi) => { const live = rs.filter((x) => x.quarters[qi].attainment != null);
+        const w = sum(live, (x) => repOf(x.name).quotaShare); return { label: qLabel(REP_QS[qi]), attainment: w ? sum(live, (x) => x.quarters[qi].attainment * repOf(x.name).quotaShare) / w : null }; });
+      const q4 = ctx.quota ? (ctx.closedWon * share("closedShare")) / (ctx.quota * share("quotaShare")) : 0;
+      return { name: t.name, manager: t.manager, reps: rs, quarters, trend: trendOf(quarters.map((x) => x.attainment).filter((v) => v != null)),
+        q4ToDate: q4, improving: rs.filter((x) => x.trend.label === "Improving").length, declining: rs.filter((x) => x.trend.label === "Declining").length,
+        behind: rs.filter((x) => x.level === "bad").length };
+    });
+    return { reps, teams, quarterLabels: REP_QS.map(qLabel) };
+  }
+
+  // ---------- Definitions: one entry per term. `short` is the hover text; the Definitions tab shows it all ----------
+  // threshold = key in THRESHOLDS; calc = key in SAMPLE_CALCS.
+  const GROUPS = ["Reading the page", "Forecast and coverage", "Pipeline", "Pipeline hygiene", "MEDDPICC", "Revenue and retention", "Efficiency", "People and activity", "Marketing", "Deal desk and commission", "Planning"];
+  const G = (group, key, term, short, extra = {}) => ({ group, key, term, short, ...extra });
+  const GLOSSARY = [
+    G("Reading the page", "status", "Good, Watch and Act", "Every rated figure gets one of three statuses. Good: on or past the healthy line. Watch: between the lines, worth settling before it turns red. Act: past the Watch line and needs action now.", { more: "The words change to suit the measure (On track, Healthy, Ahead for tenure), but the colours and the lines work the same way everywhere. The lines are all on the Sample calculations tab.", link: "calc-thresholds" }),
+    G("Reading the page", "watchList", "Watch list", "Everything rated Watch or Act: the items that need attention. Anything rated Good is off the watch list. Use the Show buttons under the tabs to filter to either."),
+    G("Reading the page", "metricsOnly", "Metrics only", "A view built from the numbers alone. It can't see what a manager knows, such as leave, territory changes, deal timing or account quality, so it's a starting point for a conversation, not a verdict."),
+    G("Reading the page", "sample", "Sample data", "Every company, person, deal and figure in this demo is invented. Any resemblance to real organisations, people or results is coincidental."),
+    G("Forecast and coverage", "quota", "Quota", "The bookings target for the period: how much new and expansion business the team is expected to sign.", { more: "Here it's the Q4 figure in the assumptions at the top, split across the reps by quota share." }),
+    G("Forecast and coverage", "closedWon", "Closed won", "Deals signed and booked so far this period.", { formula: "sum of signed deal values this quarter" }),
+    G("Forecast and coverage", "attainment", "Quota attainment", "How much of the quota has been booked: closed won ÷ quota.", { formula: "closed won ÷ quota", threshold: "attainment", calc: "attainment" }),
+    G("Forecast and coverage", "landing", "Landing forecast", "Where the quarter is expected to finish, read three ways: floor, likely and stretch.", { more: "Floor counts only clean Commit deals. Likely weights every open deal by its forecast category, halving deals with hygiene issues. Stretch assumes all Commit and Best Case close.", formula: "closed won + Σ (deal amount × category rate × 0.5 if flagged)", threshold: "landing", calc: "landing" }),
+    G("Forecast and coverage", "confidence", "Pipeline confidence", "A score out of 100 for how far the forecast can be trusted, based on clean data and buyer evidence.", { more: "Five parts: clean coverage (30 points), hygiene (20), MEDDPICC evidence on Commit and Best Case (20), past forecast accuracy (15) and how much of the gap clean Commit already covers (15).", threshold: "confidence", calc: "confidence" }),
+    G("Forecast and coverage", "remaining", "Quota still to find", "The part of the quota not yet booked: quota − closed won. Coverage is measured against this.", { formula: "quota − closed won" }),
+    G("Forecast and coverage", "coverage", "Pipeline coverage (raw)", "Open pipeline closing this quarter, as a multiple of the quota still to find.", { formula: "in-quarter pipeline ÷ quota still to find", calc: "coverage" }),
+    G("Forecast and coverage", "cleanCoverage", "Clean coverage", "Coverage counting only deals with no hygiene issues. The gap between raw and clean shows how much pipeline rests on deals with problems.", { formula: "clean in-quarter pipeline ÷ quota still to find", calc: "coverage" }),
+    G("Forecast and coverage", "weightedCoverage", "Weighted coverage", "Pipeline multiplied by each deal's stage probability, against quota still to find. 1.0x means the expected value covers the gap.", { formula: "Σ (amount × stage probability) ÷ quota still to find", calc: "weightedCoverage" }),
+    G("Forecast and coverage", "coverageNeeded", "Coverage needed", "How many times the gap the pipeline must be, given the win rate: 1 ÷ win rate. At a 33% win rate that's the familiar 3x.", { formula: "1 ÷ win rate", calc: "coverage" }),
+    G("Forecast and coverage", "forecastCategory", "Forecast category", "The rep's call on each deal: Commit (will close this period), Best Case (could close), Pipeline (early or unlikely this period), Omitted (excluded).", { more: "Each stage allows only certain categories; a Commit at Discovery is flagged as a mismatch." }),
+    G("Forecast and coverage", "calibration", "Calibrated category rates", "How often deals in each forecast category actually closed in the past. The landing forecast uses these instead of assumed rates.", { formula: "won ÷ deals that sat in that category", calc: "calibration" }),
+    G("Forecast and coverage", "forecastAcc", "Forecast accuracy", "How close the forecast call was to what actually booked.", { formula: "1 − |actual − call| ÷ actual", threshold: "forecastAcc", calc: "forecastAcc" }),
+    G("Forecast and coverage", "forecastBias", "Forecast bias", "Whether the call tends to be too high or too low. Persistently negative means sandbagging; positive means over-calling.", { formula: "(call − actual) ÷ actual", more: "Beyond ±3% is labelled sandbagged or over-called.", calc: "forecastAcc" }),
+
+    G("Pipeline", "winRate", "Win rate", "Won deals as a share of deals decided, counting only deals that reached Qualification.", { more: "Early Discovery drop-outs are left out; counting them as losses would understate the rate badly.", formula: "won ÷ (won + lost)", threshold: "winRate", calc: "winRate" }),
+    G("Pipeline", "cycle", "Sales cycle", "Median days from a deal being created to it being won. Median, because a few marathon deals drag an average up.", { threshold: "cycle", calc: "cycle" }),
+    G("Pipeline", "velocity", "Pipeline velocity", "How much bookings the open pipeline produces per day. The four inputs are the four levers a sales leader can pull.", { formula: "qualified deals × average deal × win rate ÷ cycle days", calc: "velocity" }),
+    G("Pipeline", "stageConversion", "Stage conversion", "The share of deals reaching one stage that go on to reach the next.", { formula: "deals reaching the next stage ÷ deals reaching this stage", calc: "stageConversion" }),
+    G("Pipeline", "timeInStage", "Time in stage", "How long deals sit in each stage. Past the stage limit, a deal is flagged as stuck."),
+    G("Pipeline", "stageProbability", "Stage probability", "The chance of a deal at each stage closing: Discovery 10%, Qualification 20%, Solution 40%, Proposal 60%, Negotiation 80%. Used for weighted coverage."),
+
+    G("Pipeline hygiene", "health", "Deal health score", "Starts at 100 and loses points for each hygiene issue, weighted by how serious it is.", { formula: "100 × (1 − issue weights ÷ total possible weight)", threshold: "dealHealth", calc: "health" }),
+    G("Pipeline hygiene", "rule_pastClose", "Close date in the past", "The expected close date has passed but the deal is still open. Weight 3."),
+    G("Pipeline hygiene", "rule_noNextStep", "No next step", "No dated next step is logged, so nobody can see what happens next. Weight 2."),
+    G("Pipeline hygiene", "rule_stale", "No recent activity", "No logged activity for longer than the stale setting at the top (14 days by default). Weight 2."),
+    G("Pipeline hygiene", "rule_noAmount", "Missing amount", "The deal has no value, so it counts as £0 in every forecast. Weight 3."),
+    G("Pipeline hygiene", "rule_categoryMismatch", "Forecast category doesn't fit stage", "The forecast category is not allowed at this stage, such as Commit at Discovery. Weight 2."),
+    G("Pipeline hygiene", "rule_pushed", "Close date pushed 2+ times", "The close date has moved out at least twice: a sign the deal is slipping. Weight 1."),
+    G("Pipeline hygiene", "rule_stuck", "Stuck in stage", "The deal has been in its current stage longer than the stage limit. Weight 1."),
+    G("Pipeline hygiene", "priority", "Next-step priority", "High, Medium or Low, set by how serious the issue is and how late the stage. Actions are ranked by priority × deal value."),
+
+    G("MEDDPICC", "meddpicc", "MEDDPICC", "A deal qualification checklist: eight things a seller should know before relying on a deal. Each is scored 0 (unknown), 1 (partly evidenced) or 2 (confirmed with the buyer).", { more: "Each stage has a minimum score for each element. A score below the minimum is a gap and creates a next step.", calc: "meddpicc" }),
+    G("MEDDPICC", "mp_M", "M · Metrics", "The measurable result the buyer expects, such as cost saved or revenue gained, agreed with them and written into the business case."),
+    G("MEDDPICC", "mp_EB", "EB · Economic buyer", "WHO makes the final call: the one person with budget authority who can say yes when everyone else says no. Often called the decision maker.", { more: "Not the same as the champion, who sells for us inside the account, or the signatory, who may only sign what the economic buyer approved." }),
+    G("MEDDPICC", "mp_DC", "DC · Decision criteria", "WHAT the buyer will judge us on: the technical, commercial and practical tests every option has to pass.", { more: "Ideally in writing, with our fit scored against each one." }),
+    G("MEDDPICC", "mp_DP", "DP · Decision process", "HOW and WHEN the decision gets made: the steps from evaluation to a yes, who is involved at each step and the dates.", { more: "Different from the economic buyer (who decides) and the criteria (what they decide on). Best captured in a mutual action plan." }),
+    G("MEDDPICC", "mp_PP", "PP · Paper process", "How the contract actually gets signed once there's a yes: procurement, legal, security review and the signatory, with dates."),
+    G("MEDDPICC", "mp_IP", "IP · Identify pain", "The business problem behind the deal, in the buyer's own words, and the cost of doing nothing."),
+    G("MEDDPICC", "mp_CH", "CH · Champion", "Someone inside the buyer with influence who is actively selling for us when we're not in the room. Tested by asking them to do something for us."),
+    G("MEDDPICC", "mp_CO", "CO · Competition", "Who else the buyer is considering, including building it themselves or doing nothing."),
+
+    G("Revenue and retention", "arr", "ARR", "Annual recurring revenue: the yearly value of all active subscriptions.", { formula: "start ARR + new + expansion − contraction − churn" }),
+    G("Revenue and retention", "bookings", "Bookings", "The value of deals signed in a period: new business plus expansion."),
+    G("Revenue and retention", "nrr", "NRR", "Net revenue retention: of the ARR we had a year ago, how much we have now, including upsells. Above 100% the base grows on its own.", { formula: "(ARR a year ago + expansion − contraction − churn) ÷ ARR a year ago", threshold: "nrr", calc: "retention" }),
+    G("Revenue and retention", "grr", "GRR", "Gross revenue retention: of the ARR we had a year ago, how much we kept, ignoring upsells. It can't go above 100%.", { formula: "(ARR a year ago − contraction − churn) ÷ ARR a year ago", threshold: "grr", calc: "retention" }),
+    G("Revenue and retention", "expansion", "Expansion", "Extra ARR from existing customers: more seats, higher tiers or new products."),
+    G("Revenue and retention", "churn", "Churn and contraction", "Churn is ARR lost when customers leave. Contraction is ARR lost when customers stay but spend less."),
+    G("Revenue and retention", "cohort", "Churn cohort", "A group of customers who signed in the same quarter, followed over time to see what share are still customers."),
+    G("Revenue and retention", "renewAcc", "Renewal forecast accuracy", "How close the renewal ARR called at the start of the quarter was to what actually renewed.", { formula: "1 − |renewed − forecast| ÷ renewed", threshold: "renewAcc" }),
+    G("Revenue and retention", "accountHealth", "Account health", "A score out of 100 for each renewing customer. It starts at 100 and loses points for warning signs such as falling usage, open priority-1 tickets or no engaged sponsor.", { threshold: "accountHealth", calc: "accountHealth" }),
+
+    G("Efficiency", "payback", "CAC payback", "Months of gross profit from new ARR needed to earn back what was spent winning it.", { formula: "last quarter's S&M spend ÷ (net new ARR × gross margin ÷ 12)", threshold: "payback", calc: "efficiency" }),
+    G("Efficiency", "magic", "Net magic number", "Net new ARR added for each £1 of sales and marketing spend in the previous quarter.", { formula: "net new ARR ÷ last quarter's S&M spend", threshold: "magic", calc: "efficiency" }),
+    G("Efficiency", "ruleOf40", "Rule of 40", "Revenue growth plus free cash flow margin. A quick test of whether growth is being bought too expensively.", { formula: "revenue growth % + free cash flow margin %", threshold: "ruleOf40", calc: "efficiency" }),
+    G("Efficiency", "costOfSales", "Cost of sales (commission)", "Commission paid, reps plus manager override, as a share of closed won.", { formula: "(rep commission + manager override) ÷ closed won", calc: "commission" }),
+
+    G("People and activity", "ttmAttainment", "TTM attainment", "Trailing twelve months: a rep's bookings over the last four quarters against their quota for that time. Smooths out one good or bad quarter."),
+    G("People and activity", "tenure", "Tenure expectation", "What attainment we'd expect at a rep's tenure: 40% at hire rising to 100% at 12 months. Reps are judged against this, not against a fully ramped rep.", { formula: "40% + (months ÷ 12) × 60%, capped at 100%", threshold: "tenure", calc: "tenure" }),
+    G("People and activity", "ramp", "Ramping", "A rep in their first nine months, still building a pipeline and learning the product."),
+    G("People and activity", "repTrend", "Rep trend", "Direction of a rep's quarterly attainment, from a straight line through the quarters they've worked. Up 4 points a quarter or more is Improving, down 4 or more is Declining, otherwise Steady.", { calc: "repTrend" }),
+    G("People and activity", "q4ToDate", "Quarter to date", "Bookings so far this quarter against the full-quarter quota. Mid-quarter it's naturally low, so it isn't given a status."),
+    G("People and activity", "meetings", "Meetings a week", "Buyer meetings logged in the last 30 days, per week.", { formula: "meetings ÷ (30 ÷ 7)", threshold: "meetings", calc: "activity" }),
+    G("People and activity", "connect", "Connect rate", "Live conversations as a share of calls made.", { formula: "conversations ÷ calls", threshold: "connect", calc: "activity" }),
+    G("People and activity", "show", "Show rate", "Meetings that actually happened as a share of meetings booked.", { formula: "held ÷ booked", threshold: "show" }),
+
+    G("Marketing", "mql", "MQL, SAL, SQL", "MQL: a lead marketing judges ready for sales. SAL: accepted and worked by an SDR. SQL: qualified by the SDR and handed to an account executive."),
+    G("Marketing", "mqlToSql", "MQL to SQL", "The share of marketing qualified leads that become sales qualified.", { formula: "SQLs ÷ MQLs", threshold: "mqlToSql", calc: "marketing" }),
+    G("Marketing", "firstTouch", "Speed to first touch", "Median hours from a lead arriving to an SDR first contacting it.", { threshold: "firstTouch" }),
+    G("Marketing", "pipelinePerPound", "Pipeline per £1", "Pipeline created by a channel's leads for every £1 spent on that channel.", { formula: "pipeline from the channel ÷ channel spend", threshold: "pipelinePerPound", calc: "marketing" }),
+    G("Marketing", "attribution", "Attribution model", "How credit for a deal is shared between the marketing touches before it. First touch, last touch, linear (equal shares) or position-based (40% first, 40% last, 20% across the middle).", { calc: "attribution" }),
+    G("Marketing", "dumped", "Dumped and recirculated", "Dumped: disqualified with a reason and not coming back. Recirculated: recycled to nurture, to re-qualify later."),
+
+    G("Deal desk and commission", "approval", "Discount approval", "Who must sign off a discount: up to 10% the rep, to 20% the sales manager, to 30% deal desk, above that the CFO. Non-standard terms go to deal desk or above."),
+    G("Deal desk and commission", "accelerator", "Commission accelerator", "The higher rate paid on the part of a deal that takes a rep past 100% of quota: 1.5 times the base rate here.", { calc: "commission" }),
+    G("Deal desk and commission", "override", "Manager override", "Commission a manager earns on everything their team closes: 2% here."),
+
+    G("Planning", "capacity", "Sales capacity", "How much the team can be expected to book, allowing for each rep's ramp, productivity and attrition.", { formula: "Σ months (annual quota ÷ 12 × ramp × productivity × survival)", calc: "capacity" }),
+    G("Planning", "productivity", "Productivity", "The share of quota a fully ramped rep actually delivers. Defaults to the average of reps with 12+ months' tenure."),
+    G("Planning", "attrition", "Attrition", "The share of reps expected to leave in a year, applied month by month."),
+  ];
+  const GLOSS = Object.fromEntries(GLOSSARY.map((g) => [g.key, g]));
+
+  // ---------- Sample calculations: worked examples, computed with the same engine functions the page uses ----------
+  const fG = (n) => (n < 0 ? "−£" : "£") + Math.round(Math.abs(n)).toLocaleString("en-GB");
+  const fP = (n, d = 0) => (n * 100).toFixed(d) + "%";
+  const fX = (n) => n.toFixed(2) + "x";
+  const C = (key, title, run) => ({ key, title, run });
+  const SAMPLE_CALCS = [
+    C("attainment", "Quota attainment", () => { const q = 500000, w = 350000, a = w / q;
+      return { steps: [["Quota", "", fG(q)], ["Closed won", "", fG(w)], ["Attainment", `${fG(w)} ÷ ${fG(q)}`, fP(a)]], value: a, threshold: "attainment" }; }),
+    C("coverage", "Coverage: raw, clean and needed", () => {
+      const ctx = { asOf: "2026-11-04", staleDays: 14, periodStart: "2026-10-01", periodEnd: "2026-12-31", quota: 1000000, closedWon: 400000, winRate: 0.25 };
+      const base = { owner: "A", stage: "Proposal", closeDate: "2026-12-01", lastActivity: "2026-11-01", stageEntered: "2026-10-25", nextStep: "Call", forecastCategory: "Commit", pushCount: 0 };
+      const ds = [{ ...base, id: "1", amount: 1200000 }, { ...base, id: "2", amount: 600000, nextStep: "" }];
+      const cv = coverage(ds, ctx);
+      return { steps: [["Quota still to find", "£1,000,000 − £400,000", fG(cv.remaining)], ["Pipeline closing this quarter", "£1,200,000 + £600,000", fG(cv.raw)],
+        ["Raw coverage", `${fG(cv.raw)} ÷ ${fG(cv.remaining)}`, fX(cv.rawCoverage)], ["Clean coverage", "the £600,000 deal has no next step, so it's left out: £1,200,000 ÷ £600,000", fX(cv.cleanCoverage)],
+        ["Coverage needed at a 25% win rate", "1 ÷ 0.25", fX(cv.required)], ["Pipeline needed", `${fG(cv.remaining)} × ${cv.required}`, fG(cv.pipelineNeeded)]],
+        result: `Covered on paper (${fX(cv.rawCoverage)}) but short on clean pipeline (${fX(cv.cleanCoverage)} against ${fX(cv.required)}): ${fG(cv.cleanGap)} of clean pipeline still to find.`, value: cv.cleanCoverage, out: cv }; }),
+    C("weightedCoverage", "Weighted coverage", () => { const rows = [["Negotiation", 400000], ["Proposal", 600000], ["Discovery", 800000]];
+      const w = rows.map(([s, a]) => a * stageOf(s).prob), tot = sum(w), rem = 600000;
+      return { steps: rows.map(([s, a], i) => [`${s} deal`, `${fG(a)} × ${fP(stageOf(s).prob)}`, fG(w[i])]).concat([["Weighted pipeline", "sum of the above", fG(tot)], ["Weighted coverage", `${fG(tot)} ÷ ${fG(rem)} still to find`, fX(tot / rem)]]),
+        result: `Above 1.0x: on expected value the pipeline covers the gap.`, value: tot / rem }; }),
+    C("landing", "Landing forecast: floor, likely and stretch", () => {
+      const ctx = { asOf: "2026-11-04", staleDays: 14, periodStart: "2026-10-01", periodEnd: "2026-12-31", quota: 1000000, closedWon: 400000, catRates: { Commit: 0.8, "Best Case": 0.45, Pipeline: 0.15, Omitted: 0 } };
+      const base = { owner: "A", stage: "Negotiation", closeDate: "2026-12-01", lastActivity: "2026-11-01", stageEntered: "2026-10-25", nextStep: "Call", pushCount: 0 };
+      const ds = [{ ...base, id: "1", amount: 300000, forecastCategory: "Commit" }, { ...base, id: "2", amount: 100000, forecastCategory: "Commit", nextStep: "" },
+        { ...base, id: "3", amount: 500000, stage: "Proposal", forecastCategory: "Best Case" }, { ...base, id: "4", amount: 400000, stage: "Solution", forecastCategory: "Pipeline" }];
+      const l = landing(ds, ctx);
+      return { steps: [["Closed won so far", "", fG(400000)], ["Open deals", "Commit £300,000 (clean), Commit £100,000 (no next step), Best Case £500,000, Pipeline £400,000", ""],
+        ["Floor", "£400,000 + clean Commit £300,000 × 80%", fG(l.floor)], ["Likely", "£400,000 + £300,000 × 80% + £100,000 × 80% × ½ + £500,000 × 45% + £400,000 × 15%", fG(l.likely)],
+        ["Stretch", "£400,000 + all Commit £400,000 + all Best Case £500,000 + £400,000 × 15%", fG(l.stretch)], ["Likely as % of £1,000,000 quota", "", fP(l.likelyPct)]],
+        value: l.likelyPct, threshold: "landing", out: l }; }),
+    C("confidence", "Pipeline confidence", () => { const parts = [["Clean coverage against what's needed", 30, 0.6], ["In-quarter value with no hygiene issues", 20, 0.8], ["Commit and Best Case with full MEDDPICC", 20, 0.5], ["Forecast accuracy (93% → (93 − 80) ÷ 20)", 15, 0.65], ["Gap already in clean Commit", 15, 0.4]];
+      const score = Math.round(sum(parts, (p) => p[1] * p[2]));
+      return { steps: parts.map(([k, w, v]) => [k, `${w} points × ${fP(v)}`, (w * v).toFixed(1)]).concat([["Score", "sum, rounded", score + " / 100"]]), value: score, threshold: "confidence" }; }),
+    C("calibration", "Calibrated forecast category rate", () => ({ steps: [["Past deals that sat in Commit", "", "120"], ["Of those, won", "", "96"], ["Calibrated Commit rate", "96 ÷ 120", fP(96 / 120)]],
+      result: "The landing forecast then uses 80% for Commit, not the 85% that's commonly assumed.", value: 0.8 })),
+    C("forecastAcc", "Forecast accuracy and bias", () => { const call = 1100000, act = 1000000, acc = 1 - Math.abs(act - call) / act, bias = (call - act) / act;
+      return { steps: [["Forecast call", "", fG(call)], ["Actual bookings", "", fG(act)], ["Accuracy", "1 − |£1,000,000 − £1,100,000| ÷ £1,000,000", fP(acc)], ["Bias", "(£1,100,000 − £1,000,000) ÷ £1,000,000", "+" + fP(bias)]],
+        result: "90% accurate, and over-called by 10%: the call was too optimistic.", value: acc, threshold: "forecastAcc" }; }),
+    C("winRate", "Win rate", () => ({ steps: [["Deals that reached Qualification and closed", "", "125"], ["Won", "", "40"], ["Lost", "", "85"], ["Win rate", "40 ÷ (40 + 85)", fP(40 / 125)], ["Left out", "30 deals that dropped out at Discovery", "not counted"]],
+      value: 40 / 125, threshold: "winRate" })),
+    C("cycle", "Sales cycle (median)", () => { const ds = [60, 75, 82, 95, 240];
+      return { steps: [["Days to win, five deals", ds.join(", "), ""], ["Median (middle value)", "60, 75, [82], 95, 240", median(ds) + " days"], ["Mean, for comparison", `${sum(ds)} ÷ 5`, sum(ds) / 5 + " days"]],
+        result: "One 240-day deal drags the mean to 110 days; the median of 82 days describes a typical deal.", value: median(ds), threshold: "cycle" }; }),
+    C("velocity", "Pipeline velocity", () => { const v = pipelineVelocity(Array.from({ length: 40 }, () => ({ stage: "Solution", amount: 50000 })), 0.3, 90);
+      return { steps: [["Qualified open deals", "", "40"], ["Average deal", "", fG(50000)], ["Win rate", "", "30%"], ["Cycle", "", "90 days"], ["Velocity", "40 × £50,000 × 30% ÷ 90", fG(v.perDay) + " a day"]],
+        result: `About ${fG(v.perDay * 30)} of bookings a month. Lifting win rate to 35% would add ${fG(pipelineVelocity(Array.from({ length: 40 }, () => ({ stage: "Solution", amount: 50000 })), 0.35, 90).perDay - v.perDay)} a day.`, value: v.perDay }; }),
+    C("stageConversion", "Stage conversion", () => ({ steps: [["Deals that reached Solution", "", "200"], ["Of those, reached Proposal", "", "130"], ["Solution to Proposal", "130 ÷ 200", fP(130 / 200)]], value: 0.65 })),
+    C("health", "Deal health score", () => { const d = checkDeal({ id: "X", owner: "A", stage: "Proposal", amount: 100000, closeDate: "2026-10-30", lastActivity: "2026-10-10", stageEntered: "2026-10-25", nextStep: "Call", forecastCategory: "Commit", pushCount: 0 }, { asOf: "2026-11-04", staleDays: 14 });
+      return { steps: [["Close date 5 days in the past", "weight", "3"], ["No activity for 25 days", "weight", "2"], ["Total weight of all seven rules", "3 + 2 + 2 + 3 + 2 + 1 + 1", MAX_WEIGHT], ["Health", `100 × (1 − 5 ÷ ${MAX_WEIGHT})`, d.health]], value: d.health, threshold: "dealHealth" }; }),
+    C("meddpicc", "MEDDPICC gaps on a Proposal-stage deal", () => { const have = [2, 0, 2, 1, 0, 2, 1, 1], d = { stage: "Proposal", meddpicc: have }, gaps = meddpiccGaps(d), need = MEDDPICC_REQ.Proposal;
+      return { steps: MEDDPICC.map((m, i) => [m.code + " · " + m.name, `has ${have[i]}, Proposal needs ${need[i]}`, have[i] < need[i] ? "Gap" : "OK"]).concat([["Score", have.join(" + "), sum(have) + " / 16"]]),
+        result: `${gaps.length} gaps (${gaps.map((g) => g.name).join(" and ")}), each turned into a next step, High priority at Proposal.` }; }),
+    C("retention", "NRR and GRR", () => { const s = 10000000, e = 1500000, c = 300000, ch = 600000, grr = (s - c - ch) / s, nrr = (s + e - c - ch) / s;
+      return { steps: [["ARR a year ago", "", fG(s)], ["Expansion during the year", "", "+" + fG(e)], ["Contraction", "", "−" + fG(c)], ["Churn", "", "−" + fG(ch)],
+        ["GRR", "(£10,000,000 − £300,000 − £600,000) ÷ £10,000,000", fP(grr)], ["NRR", "(£10,000,000 + £1,500,000 − £300,000 − £600,000) ÷ £10,000,000", fP(nrr)]],
+        result: `GRR ${fP(grr)} is Good; NRR ${fP(nrr)} is Watch: customers grow, but not yet at the 110% mark.`, value: nrr, threshold: "nrr" }; }),
+    C("accountHealth", "Account health", () => { const h = healthScore({ usageTrend: -0.25, p1Tickets: 1, sponsorEngaged: false, nps: 40, latePayment: false, championLeft: false });
+      return { steps: h.drivers.map((x) => [x.why, "", "−" + x.pts]).concat([["Score", "100 − " + h.drivers.map((x) => x.pts).join(" − "), h.score + " · " + h.band]]), value: h.score, threshold: "accountHealth" }; }),
+    C("efficiency", "CAC payback, net magic number and Rule of 40", () => { const sm = 1200000, nn = 900000, gm = 0.78, pb = sm / ((nn * gm) / 12), mg = nn / sm;
+      return { steps: [["Last quarter's sales and marketing spend", "", fG(sm)], ["Net new ARR this quarter", "", fG(nn)], ["Gross margin", "", "78%"],
+        ["CAC payback", "£1,200,000 ÷ (£900,000 × 78% ÷ 12)", pb.toFixed(1) + " months"], ["Net magic number", "£900,000 ÷ £1,200,000", mg.toFixed(2)],
+        ["Rule of 40", "revenue growth 28% + free cash flow margin −5%", "23%"]],
+        result: "Payback is Watch (just over 18 months), the magic number is Good (0.75), and Rule of 40 is Act (under 25%).", value: pb, threshold: "payback" }; }),
+    C("tenure", "Attainment against tenure", () => { const m = 6, exp = tenureExpectation(m), act = 0.66, r = act / exp;
+      return { steps: [["Months in seat", "", m], ["Expected attainment", "40% + (6 ÷ 12) × 60%", fP(exp)], ["Actual TTM attainment", "", fP(act)], ["Against expectation", "66% ÷ 70%", fP(r)]],
+        result: "In line for tenure: 66% looks weak on its own, but it's within 10% of what's expected six months in.", value: r, threshold: "tenure" }; }),
+    C("repTrend", "Rep trend", () => { const ys = [0.92, 0.85, 0.78, 0.70], t = trendOf(ys);
+      return { steps: [["Last four quarters", ys.map((v) => fP(v)).join(" → "), ""], ["Straight-line slope", "least squares through the four points", (t.slope < 0 ? "−" : "+") + Math.abs(t.slope * 100).toFixed(1) + " points a quarter"], ["Trend", "down 4 points a quarter or more", t.label]], value: t.slope }; }),
+    C("activity", "Meetings a week and connect rate", () => { const m = 18, wk = 30 / 7, calls = 900, conv = 72;
+      return { steps: [["Meetings in 30 days", "", m], ["Meetings a week", "18 ÷ (30 ÷ 7)", (m / wk).toFixed(1)], ["SDR calls", "", calls], ["Live conversations", "", conv], ["Connect rate", "72 ÷ 900", fP(conv / calls)]],
+        result: "4.2 meetings a week is Watch (under 4.5); an 8% connect rate is Good.", value: m / wk, threshold: "meetings" }; }),
+    C("marketing", "MQL to SQL and pipeline per £1", () => ({ steps: [["MQLs", "", "400"], ["SQLs", "", "100"], ["MQL to SQL", "100 ÷ 400", "25%"], ["Channel spend", "", fG(30000)], ["Pipeline from that channel", "", fG(750000)], ["Pipeline per £1", "£750,000 ÷ £30,000", "£25"]],
+      result: "25% MQL to SQL is Watch (under 28%); £25 of pipeline per £1 is Good.", value: 0.25, threshold: "mqlToSql" })),
+    C("attribution", "Position-based attribution", () => { const w = MODELS.position(4), v = 100000, ch = ["Webinar", "Content download", "Paid search", "Demo request"];
+      return { steps: ch.map((c, i) => [`Touch ${i + 1}: ${c}`, `${fG(v)} × ${fP(w[i])}`, fG(v * w[i])]).concat([["Total", "always the full deal", fG(sum(w) * v)]]) }; }),
+    C("commission", "Commission with an accelerator", () => { const c = dealCommission(50000, 0.10, 200000, 180000, 1.5);
+      return { steps: [["Rep quota", "", fG(200000)], ["Closed before this deal", "", fG(180000)], ["New deal", "New Business, 10% base", fG(50000)],
+        ["Up to quota", "£20,000 × 10%", fG(2000)], ["Above quota", "£30,000 × 10% × 1.5", fG(4500)], ["Commission", "", fG(c)]],
+        result: "Cost of sales on a team: if reps earn £90,000 and the manager £20,000 on £1,000,000 closed, that's 11%." }; }),
+    C("capacity", "Capacity of one rep in one month", () => { const q = 800000, ramp = rampFactor(4), prod = 0.9, v = (q / 12) * ramp * prod;
+      return { steps: [["Annual quota", "", fG(q)], ["Month 4 in seat: ramp", "months 3 to 5 produce a third", fP(ramp)], ["Productivity", "", "90%"], ["Capacity that month", "£800,000 ÷ 12 × 33% × 90%", fG(v)]],
+        result: "Add this up across every rep and month, reduced for attrition, and compare it with the annual target." }; }),
+  ];
+
   const api = {
+    THRESHOLDS, level, GROUPS, GLOSSARY, GLOSS, SAMPLE_CALCS, slopeOf, trendOf, TREND_STEP, repQuarters, repStats, splitWhole, managerView, qStart, qEnd, REP_QS,
     STAGES, RULES, MAX_WEIGHT, MEDDPICC, MEDDPICC_REQ, DISCOUNT_TIERS, OWNERS, REPS, TEAMS, PLAN, BENCH, NQ, CAT_RATE, RAMP_MONTHS,
     repOf, landing, confidence, commissionByTeam, COMPETITORS, enrichOpps, winLoss, calibrateRates, scenario, rampFactor, capacityPlan, generateActivity, healthScore, generateRenewals, renewalReport, RENEW_RATE, generateTouches, MODELS, attribution, parseCsv, toIsoDate, importDeals, importedReport, SDRS, CHANNELS, SOURCES, LEAD_START, attributeDeals, generateLeads, leadOutcomes, marketingReport, isSAL, isSQL, isOpp, tenureMonths, tenureExpectation, repTenure, teamReport, cohortSummary,
     generateDeals, checkDeal, hygieneReport, nextSteps, meddpiccGaps, dealDesk, approverFor, coverage,

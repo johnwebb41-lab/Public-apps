@@ -443,6 +443,81 @@ t("Commission by team: reps, quota, closed and payouts reconcile to the company;
   for (const x of T) { near(x.overrideEarned, x.closed * 0.02); near(x.totalEarned, x.repEarned + x.overrideEarned); if (!(x.costOfSales > 0 && x.costOfSales < 0.2)) throw new Error(x.team + " cost " + x.costOfSales); }
 });
 
+
+// ---------- v2: thresholds, manager view, definitions, sample calculations ----------
+t("MEDDPICC: every element has a unique code and short label; the three decision elements are distinct", () => {
+  const codes = E.MEDDPICC.map((m) => m.code), shorts = E.MEDDPICC.map((m) => m.short);
+  eq(new Set(codes).size, 8, "codes"); eq(new Set(shorts).size, 8, "short labels");
+  const dec = E.MEDDPICC.filter((m) => /Economic buyer|Decision/.test(m.name)).map((m) => m.code).join(",");
+  eq(dec, "EB,DC,DP");
+});
+t("Thresholds: Good, Watch and Act boundaries work both ways (higher-is-better and lower-is-better)", () => {
+  eq(E.level("nrr", 1.10), "good"); eq(E.level("nrr", 1.0999), "warn"); eq(E.level("nrr", 1.00), "warn"); eq(E.level("nrr", 0.999), "bad");
+  eq(E.level("payback", 18), "good"); eq(E.level("payback", 18.1), "warn"); eq(E.level("payback", 30), "warn"); eq(E.level("payback", 30.1), "bad");
+  eq(E.level("firstTouch", 12), "good"); eq(E.level("firstTouch", 25), "bad"); eq(E.rate("grr", 0.9), "good");
+});
+t("Thresholds: every line has a label, a reason and an example that classifies", () => {
+  for (const [k, th] of Object.entries(E.THRESHOLDS)) {
+    if (!th.label || !th.why || th.example == null) throw new Error(k + " incomplete");
+    if (!(th.up ? th.good > th.ok : th.good < th.ok)) throw new Error(k + " lines out of order");
+    if (!["good", "warn", "bad"].includes(E.level(k, th.example))) throw new Error(k);
+  }
+});
+t("Thresholds: confidence, tenure and account health words come from the shared lines", () => {
+  const rep = { ...E.REPS[0], ttmAttainment: 1.2 }; eq(E.repTenure(rep, "2026-11-04").verdict, "Ahead for tenure");
+  eq(E.healthScore({ usageTrend: -0.25, p1Tickets: 1, sponsorEngaged: false, nps: 40 }).band, "At risk");
+  eq(E.healthScore({ usageTrend: 0.1, p1Tickets: 0, sponsorEngaged: true, nps: 50 }).band, "Healthy");
+});
+t("Manager view: each rep's quarters average exactly to their TTM attainment", () => {
+  for (const r of E.repQuarters()) { const v = r.quarters.filter((q) => q.attainment != null).map((q) => q.attainment);
+    near(v.reduce((a, b) => a + b, 0) / v.length, E.repOf(r.name).ttmAttainment, r.name);
+    if (v.some((x) => x < 0.2 || x > 1.6)) throw new Error(r.name + " out of range"); }
+});
+t("Manager view: quarters before a rep started are blank, not zero", () => {
+  const q = Object.fromEntries(E.repQuarters().map((r) => [r.name, r.quarters.map((x) => x.attainment)]));
+  eq(q["Sofia Marin"][0], null); eq(q["Sofia Marin"][1], null); if (q["Sofia Marin"][2] == null) throw new Error("Sofia Q2");
+  eq(q["Liam Carter"][0], null); if (q["Priya Shah"].some((x) => x == null)) throw new Error("Priya");
+});
+t("Rep trend: 4 points a quarter either way is the line; fewer than two quarters is too early", () => {
+  eq(E.trendOf([0.92, 0.85, 0.78, 0.70]).label, "Declining"); eq(E.trendOf([0.6, 0.7, 0.8]).label, "Improving");
+  eq(E.trendOf([1.0, 1.02, 0.99, 1.01]).label, "Steady"); eq(E.trendOf([0.7]).label, "Too early");
+  near(E.slopeOf([0.92, 0.85, 0.78, 0.70]), -0.073);
+});
+t("Manager view: rep deals and wins add up to the company's TTM, so rep win rates reconcile with the metrics tab", () => {
+  const opps = E.generateOppHistory(), mv = E.managerView(opps, E.attributeDeals(E.generateDeals("2026-11-04")), { ...ctx, quota: 2200000, closedWon: 1150000 });
+  const C = opps.filter((o) => o.closeQi >= E.NQ - 4 && o.reached >= 1), W = C.filter((o) => o.won).length;
+  eq(mv.reps.reduce((a, r) => a + r.closed, 0), C.length); eq(mv.reps.reduce((a, r) => a + r.won, 0), W);
+  eq(mv.reps.length, E.REPS.length); eq(new Set(mv.reps.map((r) => r.rank)).size, E.REPS.length);
+  for (const r of mv.reps) if (r.won > r.closed) throw new Error(r.name);
+  eq(mv.teams.length, 3); eq(mv.teams.reduce((a, t) => a + t.reps.length, 0), E.REPS.length);
+});
+t("Definitions: unique keys, and every link to a threshold or worked example resolves", () => {
+  eq(new Set(E.GLOSSARY.map((g) => g.key)).size, E.GLOSSARY.length);
+  const calcs = new Set(E.SAMPLE_CALCS.map((c) => c.key));
+  for (const g of E.GLOSSARY) {
+    if (!E.GROUPS.includes(g.group)) throw new Error(g.key + " group");
+    if (g.calc && !calcs.has(g.calc)) throw new Error(g.key + " calc"); if (g.threshold && !E.THRESHOLDS[g.threshold]) throw new Error(g.key + " threshold");
+    if (!g.short || g.short.length > 260) throw new Error(g.key + " hover text");
+  }
+  for (const m of E.MEDDPICC) if (!E.GLOSS["mp_" + m.code]) throw new Error("no definition for " + m.name);
+  for (const r of E.RULES) if (!E.GLOSS["rule_" + r.id]) throw new Error("no definition for " + r.label);
+  for (const c of E.SAMPLE_CALCS) if (!E.GLOSSARY.some((g) => g.calc === c.key)) throw new Error(c.key + " unlinked");
+});
+t("Sample calculations: every example runs, and the worked figures are right", () => {
+  const R = Object.fromEntries(E.SAMPLE_CALCS.map((c) => [c.key, c.run()]));
+  for (const [k, r] of Object.entries(R)) if (!r.steps || !r.steps.length) throw new Error(k);
+  const cv = R.coverage.out; near(cv.rawCoverage, 3); near(cv.cleanCoverage, 2); near(cv.required, 4); near(cv.pipelineNeeded, 2400000);
+  const l = R.landing.out; near(l.floor, 640000); near(l.likely, 965000); near(l.stretch, 1360000);
+  near(R.weightedCoverage.value, 760000 / 600000); eq(R.health.value, 64); near(R.retention.value, 1.06);
+  near(R.efficiency.value, 1200000 / (900000 * 0.78 / 12)); eq(R.confidence.value, 60); near(R.tenure.value, 0.66 / 0.7);
+  eq(R.cycle.value, 82); near(R.velocity.value, 40 * 50000 * 0.3 / 90); eq(E.dealCommission(50000, 0.1, 200000, 180000, 1.5), 6500);
+});
+t("Page: every ? icon points at a term that has a definition", () => {
+  const page = require("fs").readFileSync(require("path").join(__dirname, "../src/page.html"), "utf8");
+  const used = [...page.matchAll(/data-def="([A-Za-z_]+)"/g), ...page.matchAll(/help\("([A-Za-z_]+)"\)/g)].map((m) => m[1]);
+  for (const k of used) if (!E.GLOSS[k]) throw new Error("no definition for " + k);
+});
+
 results.forEach((r) => console.log(r[0], r[1]));
 console.log(`\n${pass} passed, ${fail} failed`);
 const rep = E.hygieneReport(E.generateDeals("2026-11-04"), ctx);

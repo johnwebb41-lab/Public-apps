@@ -293,6 +293,62 @@ tbody tr:hover td { background: color-mix(in srgb, var(--accent-soft) 55%, trans
 footer { display: grid; gap: 4px; border-top: 1px solid var(--line); padding-top: 14px; }
 footer p { margin: 0; }
 @media (max-width: 520px) { .hero { padding: 18px; } .card { padding: 16px; } }
+
+/* ---- v2: pinned tabs, status filter, help icons, definitions, manager view ---- */
+.stickybar { position: sticky; top: 0; z-index: 25; background: var(--bg); display: grid; gap: 4px; margin-inline: -6px; padding: 2px 6px 0; transition: box-shadow .15s; }
+.stickybar.stuck { box-shadow: 0 8px 12px -10px rgba(16,24,40,.45); }
+nav.tabs { padding-top: 8px; }
+nav.tabs button[aria-selected="true"] { box-shadow: inset 0 0 0 2px var(--surface), 0 0 0 2px var(--ink); border-color: var(--ink); position: relative; z-index: 1; }
+nav.tabs button[aria-selected="true"]:hover { background: var(--accent); color: var(--surface); }
+.fbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13px; padding: 2px 0 8px; }
+.fbar .lbl { font-weight: 600; color: var(--muted); }
+.fb { font: 600 12.5px var(--body); padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.fb:hover { border-color: var(--accent); }
+.fb[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.fb .dot { width: 8px; height: 8px; border-radius: 999px; background: var(--c); }
+#fcount { color: var(--muted); font-size: 12.5px; white-space: nowrap; flex: none; }
+.fbar > * { flex: none; }
+body[data-f="good"] [data-lv]:not([data-lv="good"]), body[data-f="warn"] [data-lv]:not([data-lv="warn"]), body[data-f="bad"] [data-lv]:not([data-lv="bad"]), body[data-f="list"] [data-lv="good"] { display: none !important; }
+tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
+.fempty-msg { grid-column: 1 / -1; padding: 12px; border: 1px dashed var(--line); border-radius: 10px; }
+.help, .helpdemo { all: unset; box-sizing: border-box; display: inline-grid; place-items: center; width: 16px; height: 16px; margin-left: 5px; border-radius: 999px; border: 1.5px solid currentColor; font: 700 10.5px/1 var(--body); color: var(--accent); cursor: help; vertical-align: 1px; text-transform: none; letter-spacing: 0; flex: none; }
+.help:hover, .help:focus-visible { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.help:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.helpdemo { cursor: default; }
+.tip { position: fixed; z-index: 40; max-width: min(330px, calc(100vw - 24px)); background: var(--ink); color: var(--bg); padding: 10px 12px; border-radius: 8px; font: 13px/1.45 var(--body); box-shadow: 0 8px 24px rgba(16,24,40,.3); pointer-events: none; }
+.tip b { display: block; margin-bottom: 3px; font-weight: 600; }
+.tip .more { display: block; margin-top: 6px; font-size: 12px; opacity: .72; }
+.mgroup, .calc, [id^="def-"], [id^="dg-"], #calc-thresholds { scroll-margin-top: 150px; }
+.tour-hl { scroll-margin: 170px 0 240px; }
+.hfilters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.hfilters select { max-width: 200px; }
+/* Definitions and sample calculations */
+.defsearch { display: grid; gap: 4px; max-width: 460px; }
+.defsearch input { font: 15px var(--body); padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.deflist { display: grid; }
+.defitem { display: grid; grid-template-columns: minmax(150px, 230px) 1fr; gap: 4px 20px; padding: 12px 0; border-top: 1px solid var(--line); }
+.defitem:first-child { border-top: 0; padding-top: 2px; }
+.defitem h4 { margin: 0; font: 600 15px var(--body); }
+.defitem p { margin: 0; max-width: 76ch; }
+.defitem p + p { margin-top: 4px; }
+.defitem .more { color: var(--muted); font-size: 14px; }
+.defitem .meta { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; margin-top: 8px; color: var(--muted); align-items: baseline; }
+.defitem code, .calc code { font: 12.5px var(--mono); color: var(--ink); background: var(--bg); padding: 2px 6px; border-radius: 4px; white-space: normal; }
+.defitem:target, .calc:target { animation: flash 1.8s ease; }
+@keyframes flash { from { background: var(--accent-soft); } to { background: transparent; } }
+.steps-t td:nth-child(2) { color: var(--muted); font: 12.5px var(--mono); min-width: 220px; }
+.steps-t td:first-child { min-width: 160px; }
+.calcres { margin: 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.threx { margin: 0; padding: 12px 14px; background: var(--bg); border-radius: 8px; font-size: 14.5px; max-width: 90ch; }
+.dgrid > div { display: grid; gap: 4px; align-content: start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.dgrid p { margin: 0; }
+/* Manager view */
+.qcell { min-width: 64px; }
+#mvTeams td:first-child, #thrTable td:first-child { min-width: 190px; }
+#mvTeams td:nth-child(6) { min-width: 120px; }
+.tspark svg { width: 92px; height: 30px; display: block; }
+.mvread { min-width: 260px; font-size: 13.5px; }
+@media (max-width: 600px) { .defitem { grid-template-columns: 1fr; } .fbar { flex-wrap: nowrap; overflow-x: auto; } .stickybar { margin-inline: -16px; padding-inline: 16px; } }
 </style>
 
 <div class="wrap">
@@ -317,11 +373,13 @@ footer p { margin: 0; }
     <label for="stale">Stale after (days)<input id="stale" type="number" min="1" max="90" step="1" value="14"><span class="hint">No logged activity</span></label>
   </div>
 
-  <div class="tabhint">Click a tab to switch view, or <button type="button" class="tourlink" data-tour-start>take the two-minute tour</button></div>
+  <div class="tabhint" id="tabhint">Click a tab to switch view; the tabs stay pinned as you scroll. Hover or tap any <span class="helpdemo" aria-hidden="true">?</span> for a definition, or <button type="button" class="tourlink" data-tour-start>take the two-minute tour</button></div>
+  <div class="stickybar" id="stickybar">
   <nav class="tabs" role="tablist">
     <button role="tab" id="t-start" aria-selected="true" data-tab="start"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4z"/></svg>Start here</button>
     <button role="tab" id="t-method" aria-selected="false" data-tab="method"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>How it works</button>
     <button role="tab" id="t-summary" aria-selected="false" data-tab="summary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6M10 9h2"/></svg>Executive summary</button>
+    <button role="tab" id="t-team" aria-selected="false" data-tab="team"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.6A5 5 0 0 1 21 19"/></svg>Manager view</button>
     <button role="tab" id="t-coverage" aria-selected="false" data-tab="coverage"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18"/><path d="M6 16v-5M11 16V7M16 16v-8M20 16V4"/></svg>Forecast coverage</button>
     <button role="tab" id="t-hygiene" aria-selected="false" data-tab="hygiene"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>Hygiene and next steps</button>
     <button role="tab" id="t-commission" aria-selected="false" data-tab="commission"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M14.5 8.5a3 3 0 0 0-5 1c0 3 5 2 5 5a3 3 0 0 1-5 1M12 6v2M12 16v2"/></svg>Commission</button>
@@ -331,7 +389,20 @@ footer p { margin: 0; }
     <button role="tab" id="t-metrics" aria-selected="false" data-tab="metrics"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/></svg>Revenue metrics</button>
     <button role="tab" id="t-planning" aria-selected="false" data-tab="planning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Planning</button>
     <button role="tab" id="t-data" aria-selected="false" data-tab="data"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>Your data</button>
+    <button role="tab" id="t-defs" aria-selected="false" data-tab="defs"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4a1 1 0 0 1 1-1h13v15H6a2 2 0 0 0-2 2z"/><path d="M4 20V5M19 18v3H6M9 7h6M9 11h6"/></svg>Definitions</button>
+    <button role="tab" id="t-calcs" aria-selected="false" data-tab="calcs"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg>Sample calculations</button>
   </nav>
+  <div class="fbar" role="group" aria-label="Filter rated rows and tiles by status">
+    <span class="lbl">Show</span>
+    <button type="button" class="fb" data-f="all" aria-pressed="true">All</button>
+    <button type="button" class="fb" data-f="good" aria-pressed="false"><i class="dot" style="--c:var(--good)"></i>Good</button>
+    <button type="button" class="fb" data-f="list" aria-pressed="false"><i class="dot" style="--c:var(--warn)"></i><i class="dot" style="--c:var(--bad);margin-left:-4px"></i>Watch list</button>
+    <button type="button" class="fb" data-f="warn" aria-pressed="false"><i class="dot" style="--c:var(--warn)"></i>Watch</button>
+    <button type="button" class="fb" data-f="bad" aria-pressed="false"><i class="dot" style="--c:var(--bad)"></i>Act</button>
+    <button type="button" class="help" data-def="watchList"></button>
+    <span id="fcount" aria-live="polite"></span>
+  </div>
+  </div>
 
   <!-- COVERAGE -->
   <!-- SUMMARY -->
@@ -377,6 +448,7 @@ footer p { margin: 0; }
       <div class="qgrid">
         <a href="#method"><b>How does it work, and who sees what?</b><span>How it works</span></a>
         <a href="#summary"><b>Where will we land, and what do we need to decide?</b><span>Executive summary</span></a>
+        <a href="#team"><b>How is each rep trending across the year?</b><span>Manager view</span></a>
         <a href="#coverage"><b>Is there enough pipeline to hit the number?</b><span>Forecast coverage</span></a>
         <a href="#hygiene"><b>Which deals need attention, and what's the next step?</b><span>Hygiene and next steps</span></a>
         <a href="#commission"><b>What will each rep earn?</b><span>Commission</span></a>
@@ -386,6 +458,8 @@ footer p { margin: 0; }
         <a href="#metrics"><b>How are retention, efficiency and win rates trending?</b><span>Revenue metrics</span></a>
         <a href="#planning"><b>What if deals slip, and can we hit next year?</b><span>Planning</span></a>
         <a href="#data"><b>Would this work on our own pipeline?</b><span>Your data</span></a>
+        <a href="#defs"><b>What does each measure mean?</b><span>Definitions</span></a>
+        <a href="#calcs"><b>How is each number worked out, and what counts as good?</b><span>Sample calculations</span></a>
       </div>
     </div>
 
@@ -404,6 +478,8 @@ footer p { margin: 0; }
         <ul class="steps">
           <li>The <b>assumptions</b> at the top (quota, closed won, win rate, stale days) drive every tab. Change one and everything recalculates.</li>
           <li>Green, amber and red mean the same everywhere: <span class="pill st-good">Good</span> <span class="pill st-warn">Watch</span> <span class="pill st-bad">Act</span>. The words change to suit the measure (On track, Healthy, Ahead), and a line under each table says exactly where the thresholds sit.</li>
+          <li>The tabs stay pinned to the top as you scroll. Hover the <span class="helpdemo" aria-hidden="true">?</span> beside any measure for a one-line definition; click it for the full entry.</li>
+          <li>The <b>Show</b> buttons under the tabs filter every rated row and tile on a tab: Good, Watch, Act, or the watch list (Watch and Act together).</li>
           <li>Wide tables keep their first column pinned as you scroll sideways.</li>
           <li><b>Your data</b> runs the same checks on a CSV export from your CRM, privately in the browser.</li>
         </ul>
@@ -421,13 +497,13 @@ footer p { margin: 0; }
     </div>
     <div class="grid2">
       <div class="card land">
-        <div class="head"><h3>Where we're likely to land</h3><div class="sub">Closed won plus the open pipeline, read three ways</div></div>
+        <div class="head"><h3>Where we're likely to land <button type="button" class="help" data-def="landing"></button></h3><div class="sub">Closed won plus the open pipeline, read three ways</div></div>
         <div id="landChart"></div>
         <div class="tablewrap"><table id="landTable"></table></div>
         <p class="skey">Status uses the likely landing: 100% of quota or more is on track, 90–99% is just short, below 90% is off track.</p>
       </div>
       <div class="card">
-        <div class="head"><h3>Confidence in the pipeline</h3><div class="sub">How much of the forecast is backed by clean data and buyer evidence</div></div>
+        <div class="head"><h3>Confidence in the pipeline <button type="button" class="help" data-def="confidence"></button></h3><div class="sub">How much of the forecast is backed by clean data and buyer evidence</div></div>
         <div id="confBox"></div>
         <div class="tablewrap"><table id="confTable"></table></div>
         <p class="skey">High is 75 or more, Medium 55–74, Low below 55. Each row shows how many of its points it earned.</p>
@@ -458,7 +534,7 @@ footer p { margin: 0; }
       <div class="support" id="supportBox"></div>
     </div>
     <div class="card">
-      <div class="head"><h3>Reps and tenure</h3><div class="sub">Trailing twelve-month attainment against what we'd expect at each rep's tenure. Expectation rises from 40% at hire to 100% at 12 months; ramp is the first 9 months</div></div>
+      <div class="head"><h3>Reps and tenure <button type="button" class="help" data-def="tenure"></button></h3><div class="sub">Trailing twelve-month attainment against what we'd expect at each rep's tenure. Expectation rises from 40% at hire to 100% at 12 months; ramp is the first 9 months</div></div>
       <div class="tablewrap"><table id="tenureTable"></table></div>
         <p class="skey">Ahead: 110% or more of what's expected at that tenure. In line: 90–110%. Behind: under 90%. The black tick on each bar marks the expectation.</p>
     </div>
@@ -469,17 +545,28 @@ footer p { margin: 0; }
     </div>
   </section>
 
+  <!-- MANAGER VIEW -->
+  <section class="panel" id="p-team" role="tabpanel" aria-labelledby="t-team" hidden>
+    <div class="notice" role="note"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v.01M11 12h1v5h1"/></svg><p><b>Metrics only, and sample data.</b> <button type="button" class="help" data-def="metricsOnly"></button> This view is built from the numbers alone. It knows nothing about leave, territory changes, deal timing, account quality or anything a manager learns working alongside a rep, so use it to start a conversation, not to reach a verdict. Every rep, team and figure here is fictitious.</p></div>
+    <div class="viewbar">
+      <label for="mvTeam"><b>Manager</b> <select id="mvTeam"><option value="">All managers</option></select></label>
+      <p id="mvNote"></p>
+    </div>
+    <div class="facts" id="mvFacts"></div>
+    <div id="mvTeams" class="panel" style="gap:18px"></div>
+  </section>
+
   <section class="panel" id="p-coverage" role="tabpanel" aria-labelledby="t-coverage" hidden>
     <div class="verdict" id="verdict"></div>
     <div class="facts" id="covFacts"></div>
     <div class="grid2">
       <div class="card">
-        <div class="head"><h3>Coverage, three ways</h3><div class="sub">Pipeline closing this quarter ÷ quota still to find</div></div>
+        <div class="head"><h3>Coverage, three ways <button type="button" class="help" data-def="coverage"></button></h3><div class="sub">Pipeline closing this quarter ÷ quota still to find</div></div>
         <div class="bars" id="bars"></div>
         <div class="legend"><span><i></i>Coverage needed at your win rate</span></div>
       </div>
       <div class="card">
-        <div class="head"><h3>In-quarter pipeline by forecast category</h3><div class="sub" id="catSub"></div></div>
+        <div class="head"><h3>In-quarter pipeline by forecast category <button type="button" class="help" data-def="forecastCategory"></button></h3><div class="sub" id="catSub"></div></div>
         <div class="stack" id="catStack"></div>
         <div class="keys" id="catKeys"></div>
         <div class="tablewrap"><table id="catTable"></table></div>
@@ -496,7 +583,7 @@ footer p { margin: 0; }
     </div>
     <div class="grid2">
       <div class="card">
-        <div class="head"><h3>Issues by rule</h3><div class="sub">Select a row to filter the deal list</div></div>
+        <div class="head"><h3>Issues by rule <button type="button" class="help" data-def="health"></button></h3><div class="sub">Select a row, or use the Issue filter, to narrow the deal list</div></div>
         <div class="tablewrap"><table id="ruleTable"></table></div>
       </div>
       <div class="card">
@@ -507,9 +594,13 @@ footer p { margin: 0; }
     <div class="card">
       <div class="toolbar">
         <h3 id="dealHead">All open deals</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="hfilters">
+          <select id="fIssue" aria-label="Filter by issue"></select>
+          <select id="fTeam" aria-label="Filter by team"></select>
           <select id="ownerFilter" aria-label="Filter by owner"></select>
-          <button class="linkbtn" id="clearFilter" type="button" hidden>Clear rule filter</button>
+          <select id="fStage" aria-label="Filter by stage"></select>
+          <select id="fCat" aria-label="Filter by forecast category"></select>
+          <button class="linkbtn" id="clearFilter" type="button" hidden>Clear filters</button>
         </div>
       </div>
       <div class="tablewrap"><table id="dealTable"></table></div>
@@ -529,7 +620,7 @@ footer p { margin: 0; }
     </div>
     <div class="facts" id="comFacts"></div>
     <div class="card">
-      <div class="head"><h3>By team and manager</h3><div class="sub">Rep commission plus each manager's override on their team's bookings</div></div>
+      <div class="head"><h3>By team and manager <button type="button" class="help" data-def="costOfSales"></button></h3><div class="sub">Rep commission plus each manager's override on their team's bookings</div></div>
       <div class="tablewrap"><table id="teamComTable"></table></div>
       <p class="skey">Cost of sales = commission earned (reps plus manager override) ÷ closed won. It's the same for every team until someone passes quota and accelerators start to apply. Attainment: green at 100% or more.</p>
     </div>
@@ -539,7 +630,7 @@ footer p { margin: 0; }
         <div class="tablewrap"><table id="repTable"></table></div>
       </div>
       <div class="card">
-        <div class="head"><h3>Commission plan</h3><div class="sub">Illustrative plan for the demo</div></div>
+        <div class="head"><h3>Commission plan <button type="button" class="help" data-def="accelerator"></button></h3><div class="sub">Illustrative plan for the demo</div></div>
         <div class="tablewrap"><table id="planTable"></table></div>
         <p class="sub" style="margin:0">The slice of a deal that lands above 100% of quota pays at the accelerated rate. A deal that straddles quota is split: part at base, part accelerated. Closed business to date is paid at a blended <span class="mono">9%</span>. Managers earn a <span class="mono">2%</span> override on everything their team closes.</p>
       </div>
@@ -558,7 +649,7 @@ footer p { margin: 0; }
     <div class="scope"><b>Window:</b> the last 30 days of logged calls, emails and meetings.</div>
     <div class="facts" id="actFacts"></div>
     <div class="card chart">
-      <div class="head"><h3>Meetings and attainment</h3><div class="sub">Each dot is an account executive: meetings a week (last 30 days) against trailing twelve-month attainment</div></div>
+      <div class="head"><h3>Meetings and attainment <button type="button" class="help" data-def="meetings"></button></h3><div class="sub">Each dot is an account executive: meetings a week (last 30 days) against trailing twelve-month attainment</div></div>
       <div id="actScatter"></div>
       <div class="legend"><span class="keys"><span style="--c:var(--accent)">Enterprise</span><span style="--c:var(--good)">Mid-Market</span><span style="--c:var(--warn)">Growth</span></span></div>
       <p style="margin:0" id="actInsight"></p>
@@ -569,7 +660,7 @@ footer p { margin: 0; }
         <p class="skey">Meetings a week: Good at 4.5 or more (about one a day), Watch from 3.5, Act below. These are demo thresholds, not an industry standard.</p>
     </div>
     <div class="card">
-      <div class="head"><h3>SDRs</h3><div class="sub">Connect rate = live conversations ÷ calls. Show rate = meetings held ÷ booked</div></div>
+      <div class="head"><h3>SDRs <button type="button" class="help" data-def="connect"></button></h3><div class="sub">Connect rate = live conversations ÷ calls. Show rate = meetings held ÷ booked</div></div>
       <div class="tablewrap"><table id="actSdrs"></table></div>
         <p class="skey">Connect rate: Good at 8% or more, Watch from 5%. Show rate: Good at 75% or more, Watch from 65%.</p>
     </div>
@@ -581,7 +672,7 @@ footer p { margin: 0; }
     <div class="facts" id="mkFacts"></div>
     <div class="grid2">
       <div class="card">
-        <div class="head"><h3>Lead funnel</h3><div class="sub">From marketing qualified lead to closed won</div></div>
+        <div class="head"><h3>Lead funnel <button type="button" class="help" data-def="mql"></button></h3><div class="sub">From marketing qualified lead to closed won</div></div>
         <div class="tablewrap"><table id="mkFunnel"></table></div>
         <p class="sub" style="margin:0" id="mkFunnelNote"></p>
       </div>
@@ -604,7 +695,7 @@ footer p { margin: 0; }
     </div>
     <div class="grid2">
       <div class="card">
-        <div class="head"><h3>Dumped: disqualified leads</h3><div class="sub">Closed out by the SDR and not coming back</div></div>
+        <div class="head"><h3>Dumped: disqualified leads <button type="button" class="help" data-def="dumped"></button></h3><div class="sub">Closed out by the SDR and not coming back</div></div>
         <div class="tablewrap"><table id="mkDq"></table></div>
       </div>
       <div class="card">
@@ -619,7 +710,7 @@ footer p { margin: 0; }
         <p class="skey">Pipeline per £1: Good at £20 or more, Watch from £10, Act below.</p>
     </div>
     <div class="card">
-      <div class="head"><h3>Multi-touch attribution</h3><div class="sub" id="atSub"></div></div>
+      <div class="head"><h3>Multi-touch attribution <button type="button" class="help" data-def="attribution"></button></h3><div class="sub" id="atSub"></div></div>
       <div class="tablewrap"><table id="atTable"></table></div>
       <p style="margin:0" id="atText"></p>
     </div>
@@ -634,7 +725,7 @@ footer p { margin: 0; }
     <div class="scope"><b>Window:</b> every contract renewing in the next six months, to early May 2027.</div>
     <div class="facts" id="rnFacts"></div>
     <div class="card">
-      <div class="head"><h3>Renewal book by health</h3><div class="sub">Health starts at 100 and loses points for each warning sign</div></div>
+      <div class="head"><h3>Renewal book by health <button type="button" class="help" data-def="accountHealth"></button></h3><div class="sub">Health starts at 100 and loses points for each warning sign</div></div>
       <div id="rnStack"></div>
       <div class="keys" id="rnKeys"></div>
       <p class="sub" style="margin:0">Expected renewal rates by band (Healthy 97%, At risk 80%, Critical 50%) are assumptions; calibrate them against past renewals with real data.</p>
@@ -671,24 +762,24 @@ footer p { margin: 0; }
     <div class="mgroup" id="m-retention">
       <h2>Retention and expansion</h2>
       <div class="card">
-        <div class="head"><h3>ARR bridge, GRR and NRR</h3><div class="sub">GRR and NRR are TTM against ARR four quarters earlier</div></div>
+        <div class="head"><h3>ARR bridge, GRR and NRR <button type="button" class="help" data-def="nrr"></button></h3><div class="sub">GRR and NRR are TTM against ARR four quarters earlier</div></div>
         <div class="tablewrap"><table id="bridgeTable"></table></div>
         <p class="skey">GRR: Good at 90% or more, Watch from 85%, Act below. NRR: Good at 110% or more, Watch from 100%, Act below.</p>
       </div>
       <div class="grid2">
         <div class="card">
-          <div class="head"><h3>Expansion velocity</h3><div class="sub">How fast the installed base is growing on its own</div></div>
+          <div class="head"><h3>Expansion velocity <button type="button" class="help" data-def="expansion"></button></h3><div class="sub">How fast the installed base is growing on its own</div></div>
           <div class="levers" id="expLevers"></div>
           <div id="expChart" class="chart"></div>
         </div>
         <div class="card">
-          <div class="head"><h3>Renewal forecast accuracy</h3><div class="sub">Renewal ARR called at quarter start vs what renewed</div></div>
+          <div class="head"><h3>Renewal forecast accuracy <button type="button" class="help" data-def="renewAcc"></button></h3><div class="sub">Renewal ARR called at quarter start vs what renewed</div></div>
           <div class="tablewrap"><table id="renewTable"></table></div>
         <p class="skey">Good at 97% accuracy or more, Watch from 93%, Act below.</p>
         </div>
       </div>
       <div class="card">
-        <div class="head"><h3>Churn cohorts</h3><div class="sub">What share of the customers signed in each quarter are still with us</div></div>
+        <div class="head"><h3>Churn cohorts <button type="button" class="help" data-def="cohort"></button></h3><div class="sub">What share of the customers signed in each quarter are still with us</div></div>
         <div class="facts" id="cohortFacts"></div>
         <p class="sub" style="margin:0;max-width:84ch">How to read it: each row is a group of customers who signed in the same quarter. Read across to follow that group as it ages (+1q is one quarter after signing); read down a column to compare groups at the same age. Darker is better. The bottom-right is empty because newer groups haven't been customers that long yet.</p>
         <p class="sub" style="margin:0;max-width:84ch">Why this is lower than GRR: cohorts count customers, GRR counts pounds. Smaller customers leave more often, so keeping 81% of logos can still mean keeping about 86% of ARR.</p>
@@ -700,28 +791,28 @@ footer p { margin: 0; }
       <h2>Pipeline</h2>
       <div class="grid2">
         <div class="card">
-          <div class="head"><h3>Pipeline velocity</h3><div class="sub">Bookings the open pipeline produces per day</div></div>
+          <div class="head"><h3>Pipeline velocity <button type="button" class="help" data-def="velocity"></button></h3><div class="sub">Bookings the open pipeline produces per day</div></div>
           <div class="formula">deals × average deal × win rate ÷ cycle days</div>
           <div class="levers" id="velLevers"></div>
           <p class="sub" style="margin:0" id="velText"></p>
         </div>
         <div class="card">
-          <div class="head"><h3>Pipeline coverage</h3><div class="sub">This quarter, and early look at next quarter against the same quota</div></div>
+          <div class="head"><h3>Pipeline coverage <button type="button" class="help" data-def="coverage"></button></h3><div class="sub">This quarter, and early look at next quarter against the same quota</div></div>
           <div class="tablewrap"><table id="covTable"></table></div>
         </div>
       </div>
       <div class="grid2">
         <div class="card">
-          <div class="head"><h3>Stage conversion</h3><div class="sub">Closed opportunities, Q1 FY25 to Q3 FY26</div></div>
+          <div class="head"><h3>Stage conversion <button type="button" class="help" data-def="stageConversion"></button></h3><div class="sub">Closed opportunities, Q1 FY25 to Q3 FY26</div></div>
           <div class="tablewrap"><table id="funnelTable"></table></div>
         </div>
         <div class="card">
-          <div class="head"><h3>Average time in stage</h3><div class="sub">History vs today's open deals. Limit is where "stuck" starts</div></div>
+          <div class="head"><h3>Average time in stage <button type="button" class="help" data-def="timeInStage"></button></h3><div class="sub">History vs today's open deals. Limit is where "stuck" starts</div></div>
           <div class="tablewrap"><table id="tisTable"></table></div>
         </div>
       </div>
       <div class="card">
-        <div class="head"><h3>Win rate and cycle length</h3><div class="sub">Won ÷ (won + lost) for deals that reached Qualification. Cycle is median days, created to won</div></div>
+        <div class="head"><h3>Win rate and cycle length <button type="button" class="help" data-def="winRate"></button></h3><div class="sub">Won ÷ (won + lost) for deals that reached Qualification. Cycle is median days, created to won</div></div>
         <div class="tablewrap"><table id="winTable"></table></div>
         <p class="skey">Win rate: Good at 30% or more, Watch from 20%, Act below.</p>
       </div>
@@ -730,14 +821,14 @@ footer p { margin: 0; }
     <div class="mgroup" id="m-forecasting">
       <h2>Forecasting</h2>
       <div class="card chart">
-        <div class="head"><h3>Forecast vs actuals</h3><div class="sub">Commit called in week 3 vs bookings at quarter end</div></div>
+        <div class="head"><h3>Forecast vs actuals <button type="button" class="help" data-def="forecastAcc"></button></h3><div class="sub">Commit called in week 3 vs bookings at quarter end</div></div>
         <div id="fvaChart"></div>
         <div class="legend"><span class="keys"><span style="--c:var(--line)">Forecast call</span><span style="--c:var(--accent)">Actual bookings</span></span></div>
         <div class="tablewrap"><table id="fvaTable"></table></div>
         <p class="skey">Accuracy: Good at 95% or more, Watch from 90%, Act below. Bias beyond ±3% is labelled sandbagged or over-called.</p>
       </div>
       <div class="card">
-        <div class="head"><h3>Forecast category calibration</h3><div class="sub">How often deals in each category actually closed, from history. The landing forecast uses the calibrated rates</div></div>
+        <div class="head"><h3>Forecast category calibration <button type="button" class="help" data-def="calibration"></button></h3><div class="sub">How often deals in each category actually closed, from history. The landing forecast uses the calibrated rates</div></div>
         <div class="tablewrap"><table id="calTable"></table></div>
         <p class="skey">Calibrated rates replace the assumed ones in every landing figure.</p>
       </div>
@@ -763,7 +854,7 @@ footer p { margin: 0; }
     <div class="mgroup" id="m-efficiency">
       <h2>Efficiency</h2>
       <div class="card">
-        <div class="head"><h3>CAC payback, net magic number, Rule of 40</h3><div class="sub">Sales &amp; marketing spend is lagged one quarter</div></div>
+        <div class="head"><h3>CAC payback, net magic number, Rule of 40 <button type="button" class="help" data-def="payback"></button></h3><div class="sub">Sales &amp; marketing spend is lagged one quarter</div></div>
         <div class="tablewrap"><table id="effTable"></table></div>
         <p class="skey">CAC payback: Good at 18 months or less, Watch to 30. Net magic number: Good at 0.75 or more, Watch from 0.5. Rule of 40: Good at 40% or more, Watch from 25%.</p>
       </div>
@@ -778,7 +869,7 @@ footer p { margin: 0; }
       </div>
       <div class="grid2">
         <div class="card">
-          <div class="head"><h3>Approval matrix</h3></div>
+          <div class="head"><h3>Approval matrix <button type="button" class="help" data-def="approval"></button></h3></div>
           <div class="tablewrap"><table id="ddMatrix"></table></div>
         </div>
         <div class="card">
@@ -791,8 +882,16 @@ footer p { margin: 0; }
     <div class="mgroup" id="m-meddpicc">
       <h2>MEDDPICC</h2>
       <div class="card">
-        <div class="head"><h3>What each stage needs</h3><div class="sub">Minimum evidence: 1 = partly evidenced, 2 = confirmed with the buyer</div></div>
+        <div class="head"><h3>What each stage needs <button type="button" class="help" data-def="meddpicc"></button></h3><div class="sub">Minimum evidence: 1 = partly evidenced, 2 = confirmed with the buyer</div></div>
         <div class="tablewrap"><table class="heat" id="mReq"></table></div>
+      </div>
+      <div class="card">
+        <div class="head"><h3>Who, what and how: the three decision elements</h3><div class="sub">Easy to blur together. Each answers a different question about the buyer's decision</div></div>
+        <div class="grid3 dgrid">
+          <div><div class="eyebrow">Who makes the call</div><b>EB · Economic buyer <button type="button" class="help" data-def="mp_EB"></button></b><p class="sub">The decision maker: the one person with budget authority who can say yes when others say no. Not the champion, and not always the person who signs.</p></div>
+          <div><div class="eyebrow">What they judge us on</div><b>DC · Decision criteria <button type="button" class="help" data-def="mp_DC"></button></b><p class="sub">The technical, commercial and practical tests every option has to pass. Get them in writing and score our fit against each.</p></div>
+          <div><div class="eyebrow">How and when they decide</div><b>DP · Decision process <button type="button" class="help" data-def="mp_DP"></button></b><p class="sub">The steps from evaluation to a yes, who is involved at each one and by when. After the yes, PP · Paper process covers how the contract gets signed.</p></div>
+        </div>
       </div>
       <div class="card">
         <div class="head"><h3>Open deals from Solution onward</h3><div class="sub">Outlined cells are below what the stage needs. Gaps feed the next-steps list</div></div>
@@ -835,7 +934,7 @@ footer p { margin: 0; }
       </div>
       <div class="facts" id="capFacts"></div>
       <div class="card chart">
-        <div class="head"><h3>Monthly capacity against target</h3><div class="sub">New hires produce nothing for three months, a third for months 3–5, two thirds for 6–8, then full</div></div>
+        <div class="head"><h3>Monthly capacity against target <button type="button" class="help" data-def="capacity"></button></h3><div class="sub">New hires produce nothing for three months, a third for months 3–5, two thirds for 6–8, then full</div></div>
         <div id="capChart"></div>
         <div class="legend"><span class="keys"><span style="--c:var(--accent)">Current team</span><span style="--c:var(--good)">Planned hires</span></span><span><i></i>Target per month</span></div>
         <p style="margin:0" id="capText"></p>
@@ -864,6 +963,36 @@ footer p { margin: 0; }
       </div>
     </div>
     <div id="impOut" class="panel" style="gap:18px"></div>
+  </section>
+
+  <!-- DEFINITIONS -->
+  <section class="panel" id="p-defs" role="tabpanel" aria-labelledby="t-defs" hidden>
+    <div class="card prose" style="max-width:none">
+      <div class="eyebrow">Definitions</div>
+      <h2>What every measure means</h2>
+      <p>Plain-English definitions for every metric, hygiene rule and MEDDPICC element on the page. The same wording appears when you hover a <span class="helpdemo" aria-hidden="true">?</span> next to a measure. Where there's a worked example, the link takes you to Sample calculations.</p>
+      <label class="defsearch" for="defQ"><span class="sub">Search the definitions</span><input id="defQ" type="search" placeholder="Try NRR, champion or coverage" autocomplete="off"></label>
+      <nav class="jump" id="defJump" aria-label="Definition groups"></nav>
+    </div>
+    <div id="defGroups" class="panel" style="gap:18px"></div>
+    <p class="sub" id="defNone" hidden>No terms match that search.</p>
+  </section>
+
+  <!-- SAMPLE CALCULATIONS -->
+  <section class="panel" id="p-calcs" role="tabpanel" aria-labelledby="t-calcs" hidden>
+    <div class="card prose" style="max-width:none">
+      <div class="eyebrow">Sample calculations</div>
+      <h2>How the numbers are worked out</h2>
+      <p>Each example uses small, round, made-up numbers so every step can be followed. They're calculated by the same engine as the rest of the page and checked by the automated tests, so the arithmetic is tested, not typed.</p>
+      <nav class="jump" id="calcJump" aria-label="Worked examples"></nav>
+    </div>
+    <div class="card" id="calc-thresholds">
+      <div class="head"><h3>How Good, Watch and Act are decided <button type="button" class="help" data-def="status"></button></h3><div class="sub">Every status on the page comes from one of these lines</div></div>
+      <p class="threx" id="thrExample"></p>
+      <div class="tablewrap"><table id="thrTable"></table></div>
+      <p class="skey">These are common SaaS rules of thumb or stated demo settings, not industry law. On a live project they'd be agreed with Finance and sales leadership, then held in one place like this so every tab uses the same lines.</p>
+    </div>
+    <div id="calcCards" class="panel" style="gap:18px"></div>
   </section>
 
   <!-- METHOD -->
@@ -939,7 +1068,7 @@ footer p { margin: 0; }
       </div>
     </div>
     <details class="card fold">
-      <summary>Formula reference</summary>
+      <summary>Formula reference <span class="sub">(plain-English versions are on the Definitions tab)</span></summary>
       <dl class="defs">
         <div class="defgroup">Executive summary</div>
         <dt>Landing range</dt><dd>Floor: <code>closed + clean Commit × 85%</code>. Likely: <code>closed + Σ amount × category rate</code> with Commit 85%, Best Case 45%, Pipeline 15%, and flagged deals halved. Stretch: <code>closed + all Commit + all Best Case + Pipeline × 15%</code>. Built so floor ≤ likely ≤ stretch always holds.</dd>
@@ -1037,7 +1166,17 @@ footer p { margin: 0; }
   // Deductions that always add up exactly to 100 minus the health score.
   const deductions = (flags) => { let cw = 0, prev = 0; return flags.map((f) => { cw += f.weight; const c = Math.round((100 * cw) / E.MAX_WEIGHT), d = c - prev; prev = c; return { d, label: f.label }; }); };
   const priTag = (p) => `<span class="pri pri-${p}">${p}</span>`;
-  let ruleFilter = null;
+  // Status tags: rows and tiles carrying data-lv can be filtered by the Show buttons under the tabs.
+  const lvA = (lv) => (lv === "good" || lv === "warn" || lv === "bad" ? ` data-lv="${lv}"` : "");
+  const worst = (...lvs) => (lvs.includes("bad") ? "bad" : lvs.includes("warn") ? "warn" : "good");
+  const LVC = { good: "--good", warn: "--warn", bad: "--bad" };
+  // The ? icon beside a measure. Hover or focus shows the definition; click opens the full entry.
+  const help = (key) => { const g = E.GLOSS[key]; return g ? `<button type="button" class="help" data-def="${key}" aria-label="What is ${esc(g.term)}?">?</button>` : ""; };
+  const FACT_DEF = [["=Quota", "quota"], ["=Closed won", "closedWon"], ["=Likely landing", "landing"], ["=Pipeline confidence", "confidence"], ["Quota still to find", "remaining"], ["Coverage needed", "coverageNeeded"],
+    ["Deals with no hygiene issues", "health"], ["=MQLs", "mql"], ["=SQLs", "mql"], ["=Dumped", "dumped"], ["=Recirculated", "dumped"], ["SDR show rate", "show"], ["SDR connect rate", "connect"], ["=AE meetings", "meetings"],
+    ["=Reps behind for tenure", "tenure"], ["=Trend", "repTrend"], ["=Average TTM attainment", "ttmAttainment"], ["=Q4 so far", "q4ToDate"], ["=Win rate (TTM)", "winRate"]];
+  const fh = (k) => { const m = FACT_DEF.find(([p]) => (p[0] === "=" ? k === p.slice(1) : String(k).startsWith(p))); return m ? help(m[1]) : ""; };
+  const HF = { issue: "", team: "", owner: "", stage: "", cat: "" }; // Hygiene deal-list filters
 
   $("wr").value = Math.round(TTM_WR * 100);
   const ttmClosed = opps.filter((o) => o.closeQi >= E.NQ - 4 && o.reached >= 1);
@@ -1123,7 +1262,7 @@ footer p { margin: 0; }
       [cv.gap > 0 ? gbpK(cv.gap) : "None", "Gap on raw pipeline"],
       [cv.cleanGap > 0 ? gbpK(cv.cleanGap) : "None", "Gap on clean pipeline"],
       [cv.daysLeft + " days", "Left in the quarter"],
-    ].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}</span></div>`).join("");
+    ].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}${fh(k)}</span></div>`).join("");
     const rows = [
       ["Raw", cv.rawCoverage, cv.raw, cv.inPeriodCount + " deals closing in Q4", cv.required],
       ["Clean", cv.cleanCoverage, cv.clean, "Excludes deals with any hygiene issue", cv.required],
@@ -1132,7 +1271,7 @@ footer p { margin: 0; }
     const scale = Math.max(cv.required, 1, ...rows.map((r) => r[1]).filter(isFinite)) * 1.12;
     $("bars").innerHTML = rows.map(([name, ratio, val, note, target]) => {
       const w = isFinite(ratio) ? Math.min(100, (ratio / scale) * 100) : 100;
-      return `<div class="bar"><div class="top"><b>${name}</b><span class="num">${x(ratio)} · ${gbpK(val)}</span></div>
+      return `<div class="bar"><div class="top"><b>${name}${help({ Raw: "coverage", Clean: "cleanCoverage", Weighted: "weightedCoverage" }[name])}</b><span class="num">${x(ratio)} · ${gbpK(val)}</span></div>
         <div class="track"><div class="fill ${ratio >= target ? "ok" : "short"}" style="width:${w}%"></div><div class="req" style="left:calc(${Math.min(100, (target / scale) * 100)}% - 1px)"></div></div>
         <small>${note}</small></div>`;
     }).join("");
@@ -1164,33 +1303,42 @@ footer p { margin: 0; }
       [gbpK(h.totalValue - h.cleanValue), "Value sitting on flagged deals"],
       [h.actions.length, "Recommended actions across " + withSteps + " deals"],
       [h.actions.filter((a) => a.priority === "High").length, "High-priority actions"],
-    ].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}</span></div>`).join("");
+    ].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}${fh(k)}</span></div>`).join("");
 
     $("actionTable").innerHTML = `<thead><tr><th>Deal</th><th>Priority</th><th>Next step</th><th class="n">Value</th></tr></thead><tbody>` +
       h.actions.slice(0, 10).map((a) => `<tr><td><div>${esc(a.account)}</div><div class="sub">${esc(a.owner)} · ${a.stage}</div></td><td>${priTag(a.priority)}</td><td><div>${esc(a.text)}</div><div class="sub">${esc(a.source)}</div></td><td class="n">${a.amount ? gbpK(a.amount) : "–"}</td></tr>`).join("") + "</tbody>";
 
     $("ruleTable").innerHTML = `<thead><tr><th>Rule</th><th class="n">Weight</th><th class="n">Deals</th><th class="n">Value</th></tr></thead><tbody>` +
       h.byRule.slice().sort((a, b) => b.count - a.count).map((r) =>
-        `<tr class="ruleRow${ruleFilter === r.id ? " on" : ""}" data-rule="${r.id}" tabindex="0"><td>${esc(r.label)}${r.id === "stale" ? ` <span class="sub">(&gt;${c.staleDays}d)</span>` : ""}</td><td class="n">${r.weight}</td><td class="n">${r.count}</td><td class="n">${gbpK(r.value)}</td></tr>`).join("") + "</tbody>";
+        `<tr class="ruleRow${HF.issue === r.id ? " on" : ""}" data-rule="${r.id}" tabindex="0"><td>${esc(r.label)}${help("rule_" + r.id)}${r.id === "stale" ? ` <span class="sub">(&gt;${c.staleDays}d)</span>` : ""}</td><td class="n">${r.weight}</td><td class="n">${r.count}</td><td class="n">${gbpK(r.value)}</td></tr>`).join("") + "</tbody>";
 
     $("ownerTable").innerHTML = `<thead><tr><th>Owner</th><th class="n">Deals</th><th class="n">Flagged</th><th class="n">Actions</th></tr></thead><tbody>` +
       h.byOwner.map((o) => `<tr><td>${esc(o.owner)}<div class="sub">${E.repOf(o.owner).team}</div></td><td class="n">${o.deals}</td><td class="n">${o.flagged} <span class="sub">(${pct(o.flagged / o.deals)})</span></td><td class="n">${h.actions.filter((a) => a.owner === o.owner).length}</td></tr>`).join("") + "</tbody>";
 
-    const sel = $("ownerFilter"), keep = sel.value;
-    sel.innerHTML = `<option value="">All owners</option>` + E.OWNERS.map((o) => `<option${o === keep ? " selected" : ""}>${esc(o)}</option>`).join("");
+    // Filters only use what's already on each deal: its flagged issues, team, owner, stage and forecast category.
+    const opts = (id, all, list, key) => { if (!list.some(([v]) => v === HF[key])) HF[key] = ""; $(id).innerHTML = `<option value="">${all}</option>` + list.map(([v, t]) => `<option value="${esc(v)}"${v === HF[key] ? " selected" : ""}>${esc(t)}</option>`).join(""); };
+    opts("fIssue", "Any status", [["any", "Has an issue"], ["none", "No issues (clean)"], ...E.RULES.map((r) => [r.id, "Issue: " + r.label])], "issue");
+    opts("fTeam", "All teams", E.TEAMS.map((t) => [t.name, t.name]), "team");
+    opts("ownerFilter", "All owners", E.REPS.filter((r) => !HF.team || r.team === HF.team).map((r) => [r.name, r.name]), "owner");
+    opts("fStage", "All stages", E.STAGES.map((st) => [st.name, st.name]), "stage");
+    opts("fCat", "All categories", ["Commit", "Best Case", "Pipeline", "Omitted"].map((k) => [k, k]), "cat");
     let list = h.deals.slice();
-    if (ruleFilter) list = list.filter((d) => d.flags.some((f) => f.id === ruleFilter));
-    if (sel.value) list = list.filter((d) => d.owner === sel.value);
+    if (HF.issue === "any") list = list.filter((d) => d.flags.length); else if (HF.issue === "none") list = list.filter((d) => !d.flags.length); else if (HF.issue) list = list.filter((d) => d.flags.some((f) => f.id === HF.issue));
+    if (HF.team) list = list.filter((d) => d.team === HF.team);
+    if (HF.owner) list = list.filter((d) => d.owner === HF.owner);
+    if (HF.stage) list = list.filter((d) => d.stage === HF.stage);
+    if (HF.cat) list = list.filter((d) => d.forecastCategory === HF.cat);
     list.sort((a, b) => a.health - b.health || b.steps.length - a.steps.length || b.amount - a.amount);
-    const rl = ruleFilter && E.RULES.find((r) => r.id === ruleFilter);
-    $("dealHead").textContent = (rl ? rl.label : "All open deals") + " · " + list.length;
-    $("clearFilter").hidden = !ruleFilter;
-    $("dealTable").innerHTML = `<thead><tr><th>Deal</th><th>Owner</th><th>Stage</th><th class="n">Amount</th><th class="n">Close</th><th class="n">Health</th><th>Issues and next steps</th></tr></thead><tbody>` +
+    const rl = E.RULES.find((r) => r.id === HF.issue);
+    $("dealHead").textContent = (rl ? rl.label : HF.issue === "any" ? "Deals with an issue" : HF.issue === "none" ? "Clean deals" : "All open deals") + " · " + list.length + (list.length < h.deals.length ? " of " + h.deals.length : "");
+    $("clearFilter").hidden = !Object.values(HF).some(Boolean);
+    $("dealTable").innerHTML = `<thead><tr><th>Deal</th><th>Owner</th><th>Stage</th><th class="n">Amount</th><th class="n">Close</th><th class="n">Health${help("health")}</th><th>Issues and next steps</th></tr></thead><tbody>` +
+      (list.length ? "" : `<tr><td colspan="7" class="sub">No deals match these filters.</td></tr>`) +
       list.map((d) => {
-        return `<tr><td><div>${esc(d.account)}</div><div class="sub mono">${d.id} · ${esc(d.type)} · ${d.source}</div></td>
+        return `<tr${lvA(E.level("dealHealth", d.health))}><td><div>${esc(d.account)}</div><div class="sub mono">${d.id} · ${esc(d.type)} · ${d.source}</div></td>
         <td>${esc(d.owner)}</td><td>${d.stage}<div class="sub">${d.forecastCategory}</div></td>
         <td class="n">${d.amount ? gbp(d.amount) : "–"}</td><td class="n">${fmtDate(d.closeDate)}</td>
-        <td class="n"><span class="health num" style="color:var(${d.health >= 80 ? "--good" : d.health >= 60 ? "--warn" : "--bad"})" title="${d.flags.length ? esc(deductions(d.flags).map((x) => "−" + x.d + " " + x.label).join(", ")) : "No issues"}">${d.health}</span>${d.flags.length ? `<div class="sub">${deductions(d.flags).map((x) => "−" + x.d).join(" ")}</div>` : ""}</td>
+        <td class="n"><span class="health num" style="color:var(${LVC[E.level("dealHealth", d.health)]})" title="${d.flags.length ? esc(deductions(d.flags).map((x) => "−" + x.d + " " + x.label).join(", ")) : "No issues"}">${d.health}</span>${d.flags.length ? `<div class="sub">${deductions(d.flags).map((x) => "−" + x.d).join(" ")}</div>` : ""}</td>
         <td style="min-width:300px">${stepsCell(d)}</td></tr>`; }).join("") + "</tbody>";
   }
 
@@ -1265,14 +1413,15 @@ footer p { margin: 0; }
       ["NRR", pct1(last.nrr), E.rate("nrr", last.nrr), sgn(last.nrr - prev.nrr, (v) => (v * 100).toFixed(1) + " pts"), M.filter((m) => m.nrr).map((m) => m.nrr), why("nrr", last.nrr, pct)],
       ["GRR", pct1(last.grr), E.rate("grr", last.grr), sgn(last.grr - prev.grr, (v) => (v * 100).toFixed(1) + " pts"), M.filter((m) => m.grr).map((m) => m.grr), why("grr", last.grr, pct)],
       ["Win rate (TTM)", pct1(TTM_WR), E.rate("winRate", TTM_WR), "Last quarter " + pct(w.rate), WR.map((r) => r.rate), why("winRate", TTM_WR, pct)],
-      ["Sales cycle", Math.round(TTM_CYCLE) + " days", TTM_CYCLE <= 90 ? "good" : TTM_CYCLE <= 120 ? "warn" : "bad", sgn(w.cycleMedian - wp.cycleMedian, (v) => Math.round(v) + " days") + " QoQ", WR.map((r) => r.cycleMedian), TTM_CYCLE <= 90 ? "90 days or less is healthy" : TTM_CYCLE <= 120 ? "Above the 90-day healthy mark" : "Above 120 days"],
+      ["Sales cycle", Math.round(TTM_CYCLE) + " days", E.level("cycle", TTM_CYCLE), sgn(w.cycleMedian - wp.cycleMedian, (v) => Math.round(v) + " days") + " QoQ", WR.map((r) => r.cycleMedian), TTM_CYCLE <= 90 ? "90 days or less is healthy" : TTM_CYCLE <= 120 ? "Above the 90-day healthy mark" : "Above 120 days"],
       ["CAC payback", fmtMo(last.payback), E.rate("payback", last.payback), sgn(last.payback - prev.payback, (v) => v.toFixed(1) + " mo"), M.filter((m) => m.payback).map((m) => m.payback), (E.rate("payback", last.payback) === "good" ? "18 months or less is healthy" : E.rate("payback", last.payback) === "warn" ? "Above the 18-month healthy mark" : "Above 30 months")],
       ["Net magic number", fmtR(last.magic), E.rate("magic", last.magic), sgn(last.magic - prev.magic, fmtR), M.filter((m) => m.magic).map((m) => m.magic), why("magic", last.magic, fmtR)],
       ["Rule of 40", pct1(last.ruleOf40), E.rate("ruleOf40", last.ruleOf40), "Growth " + pct(last.revGrowth) + " + FCF " + pct(last.fcfMargin), M.filter((m) => m.ruleOf40 != null).map((m) => m.ruleOf40), why("ruleOf40", last.ruleOf40, pct)],
       ["Forecast accuracy", pct1(fa), E.rate("forecastAcc", fa), "Average of last 4 quarters", M.map((m) => m.forecastAcc), why("forecastAcc", fa, pct)],
       ["Pipeline velocity", gbp(vel.perDay) + "/day", "info", gbpK(vel.perDay * 30) + " a month", null, "No standard benchmark: judge it against its own trend"],
     ];
-    $("kpis").innerHTML = tiles.map(([k, v, lv, d, sp, wy]) => `<div class="kpi"><div class="row"><span class="k">${k}</span>${pill(lv, lv === "info" ? "Info" : undefined)}</div><div class="v">${v}</div><div class="d">${d}</div>${sp ? spark(sp, lv) : ""}<div class="why w-${lv}">${wy}</div></div>`).join("");
+    const KDEF = { ARR: "arr", NRR: "nrr", GRR: "grr", "Win rate (TTM)": "winRate", "Sales cycle": "cycle", "CAC payback": "payback", "Net magic number": "magic", "Rule of 40": "ruleOf40", "Forecast accuracy": "forecastAcc", "Pipeline velocity": "velocity" };
+    $("kpis").innerHTML = tiles.map(([k, v, lv, d, sp, wy]) => `<div class="kpi"${lvA(lv)}><div class="row"><span class="k">${k}${help(KDEF[k])}</span>${pill(lv, lv === "info" ? "Info" : undefined)}</div><div class="v">${v}</div><div class="d">${d}</div>${sp ? spark(sp, lv) : ""}<div class="why w-${lv}">${wy}</div></div>`).join("");
   }
 
   function renderProjection() {
@@ -1294,16 +1443,16 @@ footer p { margin: 0; }
     renderKpis(c);
     // Bridge
     const B = M.slice(-8);
-    $("bridgeTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">Start ARR</th><th class="n">New</th><th class="n">Expansion</th><th class="n">Contraction</th><th class="n">Churn</th><th class="n">End ARR</th><th class="n">GRR</th><th class="n">NRR</th></tr></thead><tbody>` +
-      B.map((m) => `<tr><td>${m.label}</td><td class="n">${gbpM(m.arr - m.netNew)}</td><td class="n">${gbpK(m.newArr)}</td><td class="n">${gbpK(m.expansion)}</td><td class="n">−${gbpK(m.contraction)}</td><td class="n">−${gbpK(m.churn)}</td><td class="n">${gbpM(m.arr)}</td>
+    $("bridgeTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">Start ARR</th><th class="n">New</th><th class="n">Expansion</th><th class="n">Contraction</th><th class="n">Churn</th><th class="n">End ARR</th><th class="n">GRR${help("grr")}</th><th class="n">NRR${help("nrr")}</th></tr></thead><tbody>` +
+      B.map((m) => `<tr${lvA(worst(E.rate("grr", m.grr), E.rate("nrr", m.nrr)))}><td>${m.label}</td><td class="n">${gbpM(m.arr - m.netNew)}</td><td class="n">${gbpK(m.newArr)}</td><td class="n">${gbpK(m.expansion)}</td><td class="n">−${gbpK(m.contraction)}</td><td class="n">−${gbpK(m.churn)}</td><td class="n">${gbpM(m.arr)}</td>
         <td class="n"><span class="pill st-${E.rate("grr", m.grr)}">${pct1(m.grr)}</span></td><td class="n"><span class="pill st-${E.rate("nrr", m.nrr)}">${pct1(m.nrr)}</span></td></tr>`).join("") + "</tbody>";
     // Expansion velocity
-    $("expLevers").innerHTML = [[gbpK(last.expansionPerMonth), "Expansion ARR per month (TTM)"], [pct1(last.expansionRate), "Of starting base, per year"], [sgn(last.expansionQoQ, pct1), "Expansion bookings QoQ"]].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}</span></div>`).join("");
+    $("expLevers").innerHTML = [[gbpK(last.expansionPerMonth), "Expansion ARR per month (TTM)"], [pct1(last.expansionRate), "Of starting base, per year"], [sgn(last.expansionQoQ, pct1), "Expansion bookings QoQ"]].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}${fh(k)}</span></div>`).join("");
     const er = M.filter((m) => m.expansionPerMonth);
     $("expChart").innerHTML = lineChart({ labels: er.map((m) => m.label), values: er.map((m) => m.expansionPerMonth), fmt: gbpK, H: 200 });
     // Renewals
     $("renewTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">Due</th><th class="n">Forecast</th><th class="n">Renewed</th><th class="n">Accuracy</th></tr></thead><tbody>` +
-      M.slice(-6).map((m) => `<tr><td>${m.label}</td><td class="n">${gbpM(m.renewDue)}</td><td class="n">${gbpM(m.renewForecast)}</td><td class="n">${gbpM(m.renewActual)}</td><td class="n"><span class="pill st-${E.rate("renewAcc", m.renewAcc)}">${pct1(m.renewAcc)}</span></td></tr>`).join("") + "</tbody>";
+      M.slice(-6).map((m) => `<tr${lvA(E.rate("renewAcc", m.renewAcc))}><td>${m.label}</td><td class="n">${gbpM(m.renewDue)}</td><td class="n">${gbpM(m.renewForecast)}</td><td class="n">${gbpM(m.renewActual)}</td><td class="n"><span class="pill st-${E.rate("renewAcc", m.renewAcc)}">${pct1(m.renewAcc)}</span></td></tr>`).join("") + "</tbody>";
     // Cohorts
     const CS = E.cohortSummary(hist.cohorts), ages = CS.length - 1;
     $("cohortFacts").innerHTML = [[1, "After 1 quarter"], [4, "After 1 year"], [8, "After 2 years"]].map(([ag, k]) => { const r = CS[ag];
@@ -1315,7 +1464,7 @@ footer p { margin: 0; }
       `<tr class="avg"><td class="lbl"><b>Weighted average</b></td><td class="n">${hist.cohorts.reduce((x, co) => x + co.logos, 0)}</td><td></td>${Array.from({ length: ages }, (_, i) => (CS[i + 1].retained != null ? cell(CS[i + 1].retained) : "<td></td>")).join("")}</tr></tbody>`;
     // Velocity
     const vel = E.pipelineVelocity(deals, TTM_WR, TTM_CYCLE);
-    $("velLevers").innerHTML = [[vel.opps, "Qualified open deals"], [gbpK(vel.avgDeal), "Average deal"], [pct1(vel.winRate), "Win rate (TTM)"], [Math.round(vel.cycleDays) + " days", "Cycle (TTM median)"]].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}</span></div>`).join("");
+    $("velLevers").innerHTML = [[vel.opps, "Qualified open deals"], [gbpK(vel.avgDeal), "Average deal"], [pct1(vel.winRate), "Win rate (TTM)"], [Math.round(vel.cycleDays) + " days", "Cycle (TTM median)"]].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}${fh(k)}</span></div>`).join("");
     const plus = E.pipelineVelocity(deals, TTM_WR + 0.05, TTM_CYCLE).perDay;
     const faster = E.pipelineVelocity(deals, TTM_WR, TTM_CYCLE * 0.9).perDay;
     $("velText").innerHTML = `<b class="mono">${gbp(vel.perDay)}</b> a day. Five points more win rate adds ${gbp(plus - vel.perDay)}/day; a cycle 10% shorter adds ${gbp(faster - vel.perDay)}/day.`;
@@ -1335,16 +1484,16 @@ footer p { margin: 0; }
       E.timeInStage(opps, deals, AS_OF).map((t) => `<tr><td>${t.stage}</td><td class="n">${Math.round(t.avg)} d</td><td class="n">${Math.round(t.median)} d</td><td class="n">${t.openAvg == null ? "–" : Math.round(t.openAvg) + " d"} <span class="sub">(${t.openCount})</span></td><td class="n">${t.limit} d</td></tr>`).join("") + "</tbody>";
     // Win rate and cycle
     $("winTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">Closed</th><th class="n">Won</th><th class="n">Win rate (count)</th><th class="n">Win rate (value)</th><th class="n">Avg won deal</th><th class="n">Cycle (median)</th></tr></thead><tbody>` +
-      WR.map((w) => `<tr><td>${w.label}</td><td class="n">${w.closed}</td><td class="n">${w.won}</td><td class="n"><span class="pill st-${E.rate("winRate", w.rate)}">${pct1(w.rate)}</span></td><td class="n">${pct1(w.valueRate)}</td><td class="n">${gbpK(w.avgWon)}</td><td class="n">${Math.round(w.cycleMedian)} d</td></tr>`).join("") + "</tbody>";
+      WR.map((w) => `<tr${lvA(E.rate("winRate", w.rate))}><td>${w.label}</td><td class="n">${w.closed}</td><td class="n">${w.won}</td><td class="n"><span class="pill st-${E.rate("winRate", w.rate)}">${pct1(w.rate)}</span></td><td class="n">${pct1(w.valueRate)}</td><td class="n">${gbpK(w.avgWon)}</td><td class="n">${Math.round(w.cycleMedian)} d</td></tr>`).join("") + "</tbody>";
     // Forecast vs actuals
     const FV = M.slice(-8);
     $("fvaChart").innerHTML = barPairs({ labels: FV.map((m) => m.label), a: FV.map((m) => m.forecast), b: FV.map((m) => m.bookings), fmt: gbpK });
     $("fvaTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">Call</th><th class="n">Actual</th><th class="n">Accuracy</th><th class="n">Bias</th></tr></thead><tbody>` +
-      FV.map((m) => `<tr><td>${m.label}</td><td class="n">${gbpK(m.forecast)}</td><td class="n">${gbpK(m.bookings)}</td><td class="n"><span class="pill st-${E.rate("forecastAcc", m.forecastAcc)}">${pct1(m.forecastAcc)}</span></td><td class="n">${sgn(m.forecastBias, pct1)} <span class="sub">${m.forecastBias < -0.03 ? "sandbagged" : m.forecastBias > 0.03 ? "over-called" : "on target"}</span></td></tr>`).join("") + "</tbody>";
+      FV.map((m) => `<tr${lvA(E.rate("forecastAcc", m.forecastAcc))}><td>${m.label}</td><td class="n">${gbpK(m.forecast)}</td><td class="n">${gbpK(m.bookings)}</td><td class="n"><span class="pill st-${E.rate("forecastAcc", m.forecastAcc)}">${pct1(m.forecastAcc)}</span></td><td class="n">${sgn(m.forecastBias, pct1)} <span class="sub">${m.forecastBias < -0.03 ? "sandbagged" : m.forecastBias > 0.03 ? "over-called" : "on target"}</span></td></tr>`).join("") + "</tbody>";
     // Efficiency
-    $("effTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">S&amp;M (prior q)</th><th class="n">Net new ARR</th><th class="n">Gross margin</th><th class="n">CAC payback</th><th class="n">Net magic no.</th><th class="n">Revenue growth</th><th class="n">FCF margin</th><th class="n">Rule of 40</th></tr></thead><tbody>` +
+    $("effTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">S&amp;M (prior q)</th><th class="n">Net new ARR</th><th class="n">Gross margin</th><th class="n">CAC payback${help("payback")}</th><th class="n">Net magic no.${help("magic")}</th><th class="n">Revenue growth</th><th class="n">FCF margin</th><th class="n">Rule of 40${help("ruleOf40")}</th></tr></thead><tbody>` +
       M.slice(-7).map((m) => { const i = M.indexOf(m);
-        return `<tr><td>${m.label}</td><td class="n">${gbpK(M[i - 1].sm)}</td><td class="n">${gbpK(m.netNew)}</td><td class="n">${pct(m.gm)}</td>
+        return `<tr${lvA(worst(E.rate("payback", m.payback), E.rate("magic", m.magic), E.rate("ruleOf40", m.ruleOf40)))}><td>${m.label}</td><td class="n">${gbpK(M[i - 1].sm)}</td><td class="n">${gbpK(m.netNew)}</td><td class="n">${pct(m.gm)}</td>
         <td class="n"><span class="pill st-${E.rate("payback", m.payback)}">${fmtMo(m.payback)}</span></td><td class="n"><span class="pill st-${E.rate("magic", m.magic)}">${fmtR(m.magic)}</span></td>
         <td class="n">${pct1(m.revGrowth)}</td><td class="n">${sgn(m.fcfMargin, pct1)}</td><td class="n"><span class="pill st-${E.rate("ruleOf40", m.ruleOf40)}">${pct1(m.ruleOf40)}</span></td></tr>`; }).join("") + "</tbody>";
     // Deal desk
@@ -1355,7 +1504,7 @@ footer p { margin: 0; }
       [queue.length, "Deals waiting on sign-off"], [gbpK(queue.reduce((a, r) => a + r.d.amount, 0)), "Value in the queue"],
       [pct1(discounted.reduce((a, d) => a + d.discount * d.amount, 0) / (discounted.reduce((a, d) => a + d.amount, 0) || 1)), "Value-weighted average discount"],
       [deals.filter((d) => d.discount > 0.20).length, "Deals over 20% discount"], [deals.filter((d) => d.nonStandard).length, "Non-standard terms requested"],
-    ].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}</span></div>`).join("");
+    ].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}${fh(k)}</span></div>`).join("");
     $("ddQueue").innerHTML = `<thead><tr><th>Deal</th><th>Stage</th><th class="n">Amount</th><th class="n">Discount</th><th>Terms</th><th>Approver</th><th>Status</th><th>Action</th></tr></thead><tbody>` +
       (queue.length ? queue.map(({ d, x: q }) => `<tr><td><div>${esc(d.account)}</div><div class="sub">${esc(d.owner)}</div></td><td>${d.stage}</td><td class="n">${gbpK(d.amount)}</td><td class="n">${pct(d.discount)}</td><td>${esc(d.nonStandard || "Standard")}</td><td>${q.approver}</td><td><span class="pill st-${d.approval === "Pending" ? "warn" : "bad"}">${d.approval}</span></td><td style="min-width:220px">${priTag(q.action.priority)}${esc(q.action.text)}</td></tr>`).join("")
         : `<tr><td colspan="8" class="sub">Nothing waiting.</td></tr>`) + "</tbody>";
@@ -1366,12 +1515,13 @@ footer p { margin: 0; }
     $("ddBands").innerHTML = `<thead><tr><th>Discount</th><th class="n">Deals</th><th style="min-width:120px">Win rate</th></tr></thead><tbody>` +
       E.discountBands(opps).map((b) => `<tr><td>${b.label}</td><td class="n">${b.deals}</td><td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span style="width:${b.winRate * 100}%"></span></div><span class="num">${pct(b.winRate)}</span></div></td></tr>`).join("") + "</tbody>";
     // MEDDPICC
-    const head = `<th class="lbl">Stage</th>${E.MEDDPICC.map((m) => `<th class="n" title="${m.name}">${m.key}<div class="sub" style="text-transform:none;letter-spacing:0;font-weight:400">${m.name.split(" ")[0]}</div></th>`).join("")}`;
+    const mHead = (m) => `<th class="n">${m.code}${help("mp_" + m.code)}<div class="sub" style="text-transform:none;letter-spacing:0;font-weight:400">${m.short}</div></th>`;
+    const head = `<th class="lbl">Stage</th>${E.MEDDPICC.map(mHead).join("")}`;
     const byStage = E.meddpiccByStage(deals);
     $("mReq").innerHTML = `<thead><tr>${head}<th class="n">Open deals</th><th class="n">With gaps</th></tr></thead><tbody>` +
       E.STAGES.map((s, si) => `<tr><td class="lbl">${s.name}</td>${E.MEDDPICC_REQ[s.name].map((q) => `<td>${q ? `<span class="mp mp-${q}">${q}</span>` : `<span class="req-cell">–</span>`}</td>`).join("")}<td class="n">${byStage[si].deals}</td><td class="n">${byStage[si].gapDeals}</td></tr>`).join("") + "</tbody>";
     const late = deals.filter((d) => E.stageIndex(d.stage) >= 2).sort((a, b) => E.stageIndex(b.stage) - E.stageIndex(a.stage) || b.amount - a.amount);
-    $("mDeals").innerHTML = `<thead><tr><th class="lbl">Deal</th>${E.MEDDPICC.map((m) => `<th class="n" title="${m.name}">${m.key}</th>`).join("")}<th class="n">Score</th></tr></thead><tbody>` +
+    $("mDeals").innerHTML = `<thead><tr><th class="lbl">Deal</th>${E.MEDDPICC.map(mHead).join("")}<th class="n">Score</th></tr></thead><tbody>` +
       late.map((d) => { const req = E.MEDDPICC_REQ[d.stage];
         return `<tr><td class="lbl"><div>${esc(d.account)}</div><div class="sub">${d.stage} · ${gbpK(d.amount)}</div></td>${d.meddpicc.map((v, i) => `<td><span class="mp mp-${v}${v < req[i] ? " gap" : ""}" title="${E.MEDDPICC[i].name}: ${v}, stage needs ${req[i]}">${v}</span></td>`).join("")}<td class="n">${d.meddpicc.reduce((a, b) => a + b, 0)}/16</td></tr>`; }).join("") + "</tbody>";
   }
@@ -1400,9 +1550,9 @@ footer p { margin: 0; }
       sv += `<text x="${x + bw / 2}" y="${H - 10}" text-anchor="middle">${q.label}${q.done ? "" : " (in progress)"}</text>`; });
     $("fyChart").innerHTML = sv + "</svg>";
     $("fyTable").innerHTML = `<thead><tr><th>Quarter</th><th class="n">Quota</th><th class="n">Forecast call</th><th class="n">Booked</th><th class="n">Attainment</th><th class="n">Forecast accuracy</th><th class="n">NRR (TTM)</th></tr></thead><tbody>` +
-      qs.map((q) => q.done ? `<tr><td>${q.label}</td><td class="n">${gbpK(q.quota)}</td><td class="n">${gbpK(q.call)}</td><td class="n">${gbpK(q.booked)}</td><td class="n"><span class="pill st-${q.booked / q.quota >= 1 ? "good" : q.booked / q.quota >= 0.9 ? "warn" : "bad"}">${pct(q.booked / q.quota)}</span></td><td class="n">${pct1(1 - Math.abs(q.booked - q.call) / q.booked)}</td><td class="n">${pct1(q.nrr)}</td></tr>`
-        : `<tr><td>${q.label} <span class="pill st-warn">In progress</span></td><td class="n">${gbpK(q.quota)}</td><td class="n">–</td><td class="n">${gbpK(q.booked)} <span class="sub">likely ${gbpK(q.likely)}</span></td><td class="n"><span class="pill st-${l.likelyPct >= 1 ? "good" : l.likelyPct >= 0.9 ? "warn" : "bad"}">${pct(l.likelyPct)} likely</span></td><td class="n">–</td><td class="n">${pct1(last.nrr)}</td></tr>`).join("") +
-      `<tr class="avg"><td><b>FY26</b></td><td class="n"><b>${gbpK(fyQuota)}</b></td><td></td><td class="n"><b>${gbpK(ytd)}</b> <span class="sub">likely ${gbpK(fyLikely)}</span></td><td class="n"><span class="pill st-${fyLikely / fyQuota >= 1 ? "good" : fyLikely / fyQuota >= 0.9 ? "warn" : "bad"}">${pct(fyLikely / fyQuota)} likely</span></td><td></td><td></td></tr></tbody>`;
+      qs.map((q) => q.done ? `<tr${lvA(E.level("attainment", q.booked / q.quota))}><td>${q.label}</td><td class="n">${gbpK(q.quota)}</td><td class="n">${gbpK(q.call)}</td><td class="n">${gbpK(q.booked)}</td><td class="n"><span class="pill st-${E.level("attainment", q.booked / q.quota)}">${pct(q.booked / q.quota)}</span></td><td class="n">${pct1(1 - Math.abs(q.booked - q.call) / q.booked)}</td><td class="n">${pct1(q.nrr)}</td></tr>`
+        : `<tr${lvA(E.level("landing", l.likelyPct))}><td>${q.label} <span class="pill st-warn">In progress</span></td><td class="n">${gbpK(q.quota)}</td><td class="n">–</td><td class="n">${gbpK(q.booked)} <span class="sub">likely ${gbpK(q.likely)}</span></td><td class="n"><span class="pill st-${E.level("landing", l.likelyPct)}">${pct(l.likelyPct)} likely</span></td><td class="n">–</td><td class="n">${pct1(last.nrr)}</td></tr>`).join("") +
+      `<tr class="avg"><td><b>FY26</b></td><td class="n"><b>${gbpK(fyQuota)}</b></td><td></td><td class="n"><b>${gbpK(ytd)}</b> <span class="sub">likely ${gbpK(fyLikely)}</span></td><td class="n"><span class="pill st-${E.level("landing", fyLikely / fyQuota)}">${pct(fyLikely / fyQuota)} likely</span></td><td></td><td></td></tr></tbody>`;
     const best = Math.max(...hq.map((m) => m.bookings)), jump = l.likely / best - 1, ly = M[M.length - 4].bookings;
     $("fyText").innerHTML = `Q1 to Q3 averaged ${pct(prior / (FY_QUOTA[0] + FY_QUOTA[1] + FY_QUOTA[2]))} of quota. The likely Q4 of ${gbpK(l.likely)} would be ${jump > 0 ? "a record quarter, " + pct(jump) + " above the best so far" : pct(-jump) + " below the best quarter so far"} and ${pct(l.likely / ly - 1)} up on Q4 last year. ${jump > 0.15 ? "A jump that size is the clearest reason to pressure-test the Commit calls before the forecast meeting." : ""}`;
     return { fyQuota, fyLikely, ytd, jump };
@@ -1438,7 +1588,7 @@ footer p { margin: 0; }
   }
   function renderSummary(c, h, cv, teams, MR, CP) {
     const l = E.landing(deals, c), cf = E.confidence(deals, c, FA);
-    const lvl = l.likelyPct >= 1 ? "good" : l.likelyPct >= 0.9 ? "warn" : "bad";
+    const lvl = E.level("landing", l.likelyPct);
     $("sumVerdict").className = "verdict lv-" + lvl;
     $("sumVerdict").innerHTML = `<span class="pill">${{ good: "On track", warn: "Just short", bad: "Off track" }[lvl]}</span><span>We're at ${pct1(cv.attainmentToDate)} of quota with ${cv.daysLeft} days left. Likely to land at ${gbpK(l.likely)} (${pct(l.likelyPct)} of quota), somewhere between ${gbpK(l.floor)} and ${gbpK(l.stretch)}. Pipeline confidence is ${cf.level.toLowerCase()} at ${cf.score}/100.</span>`;
     const gapL = c.quota - l.likely;
@@ -1449,7 +1599,7 @@ footer p { margin: 0; }
       [gapL > 0 ? "Short at likely" : "Over at likely", gbpK(Math.abs(gapL)), gapL > 0 ? "still to find or pull in" : "ahead of quota"],
       ["Pipeline confidence", cf.score + "/100", cf.level],
       ["Days left", cv.daysLeft, "to 31 Dec 2026"],
-    ].map(([k, v, n]) => `<div><span class="k">${k}</span><span class="v">${v}</span><span class="note">${n}</span></div>`).join("");
+    ].map(([k, v, n]) => `<div><span class="k">${k}${fh(k)}</span><span class="v">${v}</span><span class="note">${n}</span></div>`).join("");
 
     $("landChart").innerHTML = landChart(l);
     $("landTable").innerHTML = `<thead><tr><th>View</th><th class="n">Lands at</th><th class="n">Of quota</th><th>How it's worked out</th></tr></thead><tbody>
@@ -1494,7 +1644,7 @@ footer p { margin: 0; }
     if (slowS.length) dec.push(["warn", "Fix speed to lead", `${slowS.map((x) => x.sdr).join(", ")}: median first touch over 24 hours. Rebalance routing or add SDR cover.`, "Marketing and SDR manager", "marketing"]);
     if (CP.gap > 0 && CP.hiresNeeded != null) dec.push(["warn", "Approve the FY27 hiring plan", `About ${CP.hiresNeeded} AE hires starting ${MON[+$("capMonth").value - 1]} close the FY27 capacity gap; each month of delay raises the number needed.`, "CRO and CFO", "planning"]);
     $("decTable").innerHTML = `<thead><tr><th>Decision</th><th>Why</th><th>Owner</th><th>Detail</th></tr></thead><tbody>` +
-      dec.map(([lv, what, why, who, tab]) => `<tr><td style="min-width:200px">${pill(lv, lv === "bad" ? "Act" : "Watch")} <b>${what}</b></td><td style="min-width:260px">${esc(why)}</td><td>${esc(who)}</td><td><a class="golink" href="#${tab}">View</a></td></tr>`).join("") + "</tbody>";
+      dec.map(([lv, what, why, who, tab]) => `<tr${lvA(lv)}><td style="min-width:200px">${pill(lv, lv === "bad" ? "Act" : "Watch")} <b>${what}</b></td><td style="min-width:260px">${esc(why)}</td><td>${esc(who)}</td><td><a class="golink" href="#${tab}">View</a></td></tr>`).join("") + "</tbody>";
 
     const sup = teams.filter((t) => t.status !== "good").sort((a, b) => b.flags.length - a.flags.length)[0];
     const findings = [
@@ -1511,16 +1661,16 @@ footer p { margin: 0; }
       h.actions.slice(0, 6).map((a) => `<tr><td><div>${esc(a.account)}</div><div class="sub">${esc(a.owner)} · ${a.stage}</div></td><td>${priTag(a.priority)}</td><td>${esc(a.text)}</td><td class="n">${a.amount ? gbpK(a.amount) : "–"}</td></tr>`).join("") + "</tbody>";
 
     $("teamTable").innerHTML = `<thead><tr><th>Team</th><th class="n">Reps</th><th class="n">Quota</th><th class="n">Closed</th><th class="n">Likely landing</th><th class="n">Clean coverage</th><th class="n">Clean deals</th><th class="n">High actions</th><th>Status</th><th>Why</th></tr></thead><tbody>` +
-      teams.map((t) => `<tr><td><b>${t.name}</b><div class="sub">Manager: ${t.manager}</div></td><td class="n">${t.reps.length}</td><td class="n">${gbpK(t.quota)}</td><td class="n">${gbpK(t.closed)} <span class="sub">(${pct(t.attainment)})</span></td>
-        <td class="n">${gbpK(t.landing.likely)} <span class="pill st-${t.landing.likelyPct >= 1 ? "good" : t.landing.likelyPct >= 0.9 ? "warn" : "bad"}">${pct(t.landing.likelyPct)}</span></td>
+      teams.map((t) => `<tr${lvA(t.status)}><td><b>${t.name}</b><div class="sub">Manager: ${t.manager}</div></td><td class="n">${t.reps.length}</td><td class="n">${gbpK(t.quota)}</td><td class="n">${gbpK(t.closed)} <span class="sub">(${pct(t.attainment)})</span></td>
+        <td class="n">${gbpK(t.landing.likely)} <span class="pill st-${E.level("landing", t.landing.likelyPct)}">${pct(t.landing.likelyPct)}</span></td>
         <td class="n">${x(t.coverage.cleanCoverage)} <span class="sub">of ${x(t.coverage.required)}</span></td><td class="n">${pct(t.cleanRate)}</td><td class="n">${t.highActions}</td><td><span class="pill st-${t.status}">${STATUS[t.status]}</span></td><td style="min-width:240px" class="sub">${t.flags.length ? t.flags.map((f, i) => esc(i ? f.text.charAt(0).toLowerCase() + f.text.slice(1) : f.text)).join("; ") : "No flags: on or above every threshold"}</td></tr>`).join("") + "</tbody>";
     const needs = teams.filter((t) => t.status !== "good").sort((a, b) => b.flags.length - a.flags.length);
     $("supportBox").innerHTML = needs.map((t) => `<div class="box"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>${t.manager}, ${t.name}</b><span class="pill st-${t.status}">${STATUS[t.status]}</span></div>
       <div class="sbcols"><div><div class="eyebrow">Why</div><ul>${t.flags.map((f) => `<li>${esc(f.text)}</li>`).join("")}</ul></div><div><div class="eyebrow">Suggested support</div><ul>${t.flags.map((f) => `<li>${SUGGEST[f.key]}</li>`).join("")}</ul></div></div></div>`).join("");
 
     const people = teams.flatMap((t) => t.reps);
-    $("tenureTable").innerHTML = `<thead><tr><th>Rep</th><th>Team</th><th>Started</th><th class="n">Tenure</th><th style="min-width:170px">TTM attainment vs expected</th><th class="n">Q4 so far</th><th>Read</th></tr></thead><tbody>` +
-      people.map((r) => `<tr><td>${esc(r.name)}${r.ramping ? ` <span class="pill st-warn">Ramping</span>` : ""}</td><td>${r.team}</td><td>${monthYear(r.start)}</td><td class="n">${tenureFmt(r.months)}</td>
+    $("tenureTable").innerHTML = `<thead><tr><th>Rep</th><th>Team</th><th>Started</th><th class="n">Tenure</th><th style="min-width:170px">TTM attainment vs expected${help("tenure")}</th><th class="n">Q4 so far</th><th>Read</th></tr></thead><tbody>` +
+      people.map((r) => `<tr${lvA(r.level)}><td>${esc(r.name)}${r.ramping ? ` <span class="pill st-warn">Ramping</span>` : ""}</td><td>${r.team}</td><td>${monthYear(r.start)}</td><td class="n">${tenureFmt(r.months)}</td>
         <td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span class="${r.level === "good" ? "ok" : ""}" style="width:${Math.min(100, (r.ttmAttainment / 1.3) * 100)}%"></span><i class="mark" style="left:${(r.expected / 1.3) * 100}%" title="Expected ${pct(r.expected)}"></i></div><span class="num">${pct(r.ttmAttainment)}</span><span class="sub">/ ${pct(r.expected)}</span></div></td>
         <td class="n">${pct(r.q4Attainment)}</td><td><span class="pill st-${r.level}">${r.verdict}</span></td></tr>`).join("") + "</tbody>";
 
@@ -1535,7 +1685,7 @@ footer p { margin: 0; }
   const OUT = [["landed", "Landed (won)", "var(--good)", "Closed won since 1 July"], ["likely", "Likely to land", "var(--accent)", "Open Commit or Best Case with no hygiene issues"],
     ["atRisk", "May not land", "var(--warn)", "Open in Pipeline category, or carrying a hygiene issue"], ["lost", "Lost", "var(--bad)", "Closed lost since 1 July"]];
   const stackBar = (o, h = 14) => `<div class="stack" style="height:${h}px">${OUT.map(([k, lb, col]) => `<span style="width:${o.total ? (o[k] / o.total) * 100 : 0}%;background:${col}" title="${lb}: ${gbpK(o[k])}"></span>`).join("")}</div>`;
-  const touchPill = (h) => `<span class="pill st-${h > 24 ? "bad" : h > 12 ? "warn" : "good"}">${Math.round(h)} h</span>`;
+  const touchPill = (h) => `<span class="pill st-${E.level("firstTouch", h)}">${Math.round(h)} h</span>`;
   function renderMarketing(c) {
     const R = E.marketingReport(leads, deals, c), f = R.funnel, d = R.disp, o = R.outcomes;
     const decided = f.sql + d.disqualified + d.recycled, decidedRate = decided ? f.sql / decided : 0;
@@ -1544,7 +1694,7 @@ footer p { margin: 0; }
       ["MQLs", f.mql, "since 1 July"], ["SQLs", f.sql, pct(f.mqlToSql) + " of MQLs"], ["Opportunities", f.opp, pct(f.oppRate) + " of SQLs accepted by AEs"],
       ["Pipeline from MQLs", gbpK(R.pipeline), "won, open and lost"], ["Landed", gbpK(o.landed), pct(o.total ? o.landed / o.total : 0) + " of that pipeline"],
       ["Dumped", d.disqualified, "disqualified"], ["Recirculated", d.recycled, "recycled to nurture"],
-    ].map(([k, v, n]) => `<div><span class="k">${k}</span><span class="v">${v}</span><span class="note">${n}</span></div>`).join("");
+    ].map(([k, v, n]) => `<div><span class="k">${k}${fh(k)}</span><span class="v">${v}</span><span class="note">${n}</span></div>`).join("");
     const rows = [["MQL", "Marketing qualified lead", f.mql, null], ["SAL", "Accepted and worked by an SDR", f.sal, f.salRate], ["SQL", "Qualified by the SDR, handed to an AE", f.sql, f.sqlRate],
       ["Opportunity", "Accepted by the AE", f.opp, f.oppRate], ["Won", "Closed won", f.won, f.winRate]];
     $("mkFunnel").innerHTML = `<thead><tr><th>Stage</th><th class="n">Leads</th><th style="min-width:130px">From previous</th></tr></thead><tbody>` +
@@ -1556,12 +1706,12 @@ footer p { margin: 0; }
       OUT.map(([k, lb, , mean]) => `<tr><td>${lb}</td><td class="n">${gbpK(o[k])}</td><td class="n">${pct(o.total ? o[k] / o.total : 0)}</td><td class="sub">${mean}</td></tr>`).join("") +
       `<tr class="avg"><td><b>Expected to convert</b></td><td class="n"><b>${gbpK(o.expected)}</b></td><td class="n">${pct(o.total ? o.expected / o.total : 0)}</td><td class="sub">Landed, plus open deals at the calibrated category rates</td></tr></tbody>`;
     $("mkTeams").innerHTML = `<thead><tr><th>Team</th><th class="n">MQLs</th><th class="n">SQLs</th><th class="n">MQL to SQL</th><th class="n">Opps</th><th style="min-width:150px">Pipeline outcome</th><th class="n">Landed</th><th class="n">Likely</th><th class="n">May not land</th><th class="n">Lost</th><th class="n">Dumped</th><th class="n">Recycled</th><th class="n">First touch</th></tr></thead><tbody>` +
-      R.byTeam.map((t) => `<tr><td><b>${t.team}</b><div class="sub">${t.manager}</div></td><td class="n">${t.mql}</td><td class="n">${t.sql}</td><td class="n"><span class="pill st-${t.mqlToSql >= 0.28 ? "good" : t.mqlToSql >= 0.22 ? "warn" : "bad"}">${pct(t.mqlToSql)}</span></td><td class="n">${t.opp}</td>
+      R.byTeam.map((t) => `<tr${lvA(worst(E.level("mqlToSql", t.mqlToSql), E.level("firstTouch", t.touchHours)))}><td><b>${t.team}</b><div class="sub">${t.manager}</div></td><td class="n">${t.mql}</td><td class="n">${t.sql}</td><td class="n"><span class="pill st-${E.level("mqlToSql", t.mqlToSql)}">${pct(t.mqlToSql)}</span></td><td class="n">${t.opp}</td>
         <td>${stackBar(t.outcomes, 10)}</td><td class="n">${gbpK(t.outcomes.landed)}</td><td class="n">${gbpK(t.outcomes.likely)}</td><td class="n">${gbpK(t.outcomes.atRisk)}</td><td class="n">${gbpK(t.outcomes.lost)}</td>
         <td class="n">${t.disqualified} <span class="sub">(${pct(t.mql ? t.disqualified / t.mql : 0)})</span></td><td class="n">${t.recycled}</td><td class="n">${touchPill(t.touchHours)}</td></tr>`).join("") + "</tbody>";
     $("mkSdrs").innerHTML = `<thead><tr><th>SDR</th><th class="n">Tenure</th><th class="n">MQLs</th><th class="n">First touch</th><th class="n">SQLs</th><th class="n">MQL to SQL</th><th class="n">AE accepted</th><th class="n">Pipeline from MQLs</th><th class="n">Won</th><th class="n">Outbound opps</th><th class="n">Unworked 2d+</th></tr></thead><tbody>` +
       R.bySdr.map((x) => { const m = E.tenureMonths(x.start, AS_OF);
-        return `<tr><td>${x.sdr}<div class="sub">${x.team}</div></td><td class="n">${tenureFmt(m)}</td><td class="n">${x.mql}</td><td class="n">${touchPill(x.touchHours)}</td><td class="n">${x.sql}</td><td class="n">${pct(x.mqlToSql)}</td><td class="n">${pct(x.oppRate)}</td>
+        return `<tr${lvA(E.level("firstTouch", x.touchHours))}><td>${x.sdr}<div class="sub">${x.team}</div></td><td class="n">${tenureFmt(m)}</td><td class="n">${x.mql}</td><td class="n">${touchPill(x.touchHours)}</td><td class="n">${x.sql}</td><td class="n">${pct(x.mqlToSql)}</td><td class="n">${pct(x.oppRate)}</td>
         <td class="n">${gbpK(x.pipeline)}</td><td class="n">${gbpK(x.wonValue)}</td><td class="n">${x.outboundOpps} <span class="sub">(${gbpK(x.outboundValue)})</span></td><td class="n" style="color:var(${x.staleNew ? "--bad" : "--muted"})">${x.staleNew}</td></tr>`; }).join("") + "</tbody>";
     const reasonTable = (list, total) => `<thead><tr><th>Reason</th><th class="n">Leads</th><th style="min-width:120px">Share</th></tr></thead><tbody>` +
       list.map((r) => `<tr><td>${esc(r.reason)}</td><td class="n">${r.count}</td><td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span style="width:${(r.count / total) * 100}%"></span></div><span class="num">${pct(r.count / total)}</span></div></td></tr>`).join("") + "</tbody>";
@@ -1569,8 +1719,8 @@ footer p { margin: 0; }
     $("mkRec").innerHTML = reasonTable(R.recycleReasons, d.recycled);
     $("mkOpen").innerHTML = `Still in play: ${d.working} leads being worked and ${d.unworked} not yet touched, <b style="color:var(--bad)">${d.staleNew} of them waiting more than two days</b>. A further ${d.rejected} SQLs were turned down by AEs (${R.rejectReasons.map((r) => r.reason.toLowerCase() + ": " + r.count).join(", ")}).`;
     $("mkChannels").innerHTML = `<thead><tr><th>Channel</th><th class="n">Spend</th><th class="n">MQLs</th><th class="n">Cost per MQL</th><th class="n">SQLs</th><th class="n">MQL to SQL</th><th class="n">Cost per SQL</th><th class="n">Pipeline</th><th class="n">Pipeline per £1</th><th class="n">Won</th></tr></thead><tbody>` +
-      R.byChannel.slice().sort((a, b) => b.pipelinePerPound - a.pipelinePerPound).map((ch) => `<tr><td>${ch.channel}</td><td class="n">${gbpK(ch.spend)}</td><td class="n">${ch.mql}</td><td class="n">${gbp(ch.costPerMql)}</td><td class="n">${ch.sql}</td><td class="n">${pct(ch.mqlToSql)}</td>
-        <td class="n">${ch.costPerSql == null ? "–" : gbp(ch.costPerSql)}</td><td class="n">${gbpK(ch.pipeline)}</td><td class="n"><span class="pill st-${ch.pipelinePerPound >= 20 ? "good" : ch.pipelinePerPound >= 10 ? "warn" : "bad"}">£${ch.pipelinePerPound.toFixed(1)}</span></td><td class="n">${gbpK(ch.wonValue)}</td></tr>`).join("") + "</tbody>";
+      R.byChannel.slice().sort((a, b) => b.pipelinePerPound - a.pipelinePerPound).map((ch) => `<tr${lvA(E.level("pipelinePerPound", ch.pipelinePerPound))}><td>${ch.channel}</td><td class="n">${gbpK(ch.spend)}</td><td class="n">${ch.mql}</td><td class="n">${gbp(ch.costPerMql)}</td><td class="n">${ch.sql}</td><td class="n">${pct(ch.mqlToSql)}</td>
+        <td class="n">${ch.costPerSql == null ? "–" : gbp(ch.costPerSql)}</td><td class="n">${gbpK(ch.pipeline)}</td><td class="n"><span class="pill st-${E.level("pipelinePerPound", ch.pipelinePerPound)}">£${ch.pipelinePerPound.toFixed(1)}</span></td><td class="n">${gbpK(ch.wonValue)}</td></tr>`).join("") + "</tbody>";
     $("mkSource").innerHTML = `<thead><tr><th>Source</th><th class="n">Deals</th><th class="n">Open value</th><th style="min-width:140px">Share</th><th class="n">Closing in Q4</th></tr></thead><tbody>` +
       R.bySource.map((x) => `<tr><td>${x.source}</td><td class="n">${x.deals}</td><td class="n">${gbpK(x.value)}</td><td><div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span style="width:${x.share * 100}%"></span></div><span class="num">${pct(x.share)}</span></div></td><td class="n">${gbpK(x.inQuarter)}</td></tr>`).join("") + "</tbody>";
     return R;
@@ -1580,7 +1730,7 @@ footer p { margin: 0; }
   // ---------- Shared bits ----------
   const TEAMCOL = { Enterprise: "var(--accent)", "Mid-Market": "var(--good)", Growth: "var(--warn)" };
   const bandLv = (b) => (b === "Healthy" ? "good" : b === "At risk" ? "warn" : "bad");
-  const factsHtml = (rows) => rows.map(([k, v, n]) => `<div><span class="k">${k}</span><span class="v">${v}</span>${n ? `<span class="note">${n}</span>` : ""}</div>`).join("");
+  const factsHtml = (rows) => rows.map(([k, v, n]) => `<div><span class="k">${k}${fh(k)}</span><span class="v">${v}</span>${n ? `<span class="note">${n}</span>` : ""}</div>`).join("");
   const bar = (v, ok) => `<div style="display:flex;gap:8px;align-items:center"><div class="mini" style="flex:1"><span class="${ok ? "ok" : ""}" style="width:${Math.min(100, v * 100)}%"></span></div><span class="num">${pct(v)}</span></div>`;
 
   // ---------- Activity ----------
@@ -1611,12 +1761,12 @@ footer p { margin: 0; }
       { xmax: Math.max(...reps.map((r) => r.perWeek)) * 1.15, ymin: 0.4, ymax: 1.2, xfmt: (v) => v.toFixed(1), yfmt: pct, xl: "Meetings a week", yl: "TTM attainment", refX: 4.5 });
     $("actInsight").innerHTML = `Reps averaging 4.5 or more meetings a week (${hi.length}) run at <b>${pct(avg(hi))}</b> trailing attainment; the ${lo.length} below run at <b>${pct(avg(lo))}</b>. With nine reps this is a pattern worth investigating, not proof that meetings cause attainment.`;
     $("actReps").innerHTML = `<thead><tr><th>Rep</th><th class="n">Calls</th><th class="n">Emails</th><th class="n">Meetings</th><th class="n">A week</th><th class="n">Calls per meeting</th><th class="n">TTM attainment</th></tr></thead><tbody>` +
-      reps.map((r) => `<tr><td>${esc(r.name)}<div class="sub">${r.team}</div></td><td class="n">${r.calls}</td><td class="n">${r.emails}</td><td class="n">${r.meetings}</td>
-        <td class="n"><span class="pill st-${r.perWeek >= 4.5 ? "good" : r.perWeek >= 3.5 ? "warn" : "bad"}">${r.perWeek.toFixed(1)}</span></td><td class="n">${(r.calls / r.meetings).toFixed(1)}</td><td class="n">${pct(r.ttmAttainment)}</td></tr>`).join("") + "</tbody>";
+      reps.map((r) => `<tr${lvA(E.level("meetings", r.perWeek))}><td>${esc(r.name)}<div class="sub">${r.team}</div></td><td class="n">${r.calls}</td><td class="n">${r.emails}</td><td class="n">${r.meetings}</td>
+        <td class="n"><span class="pill st-${E.level("meetings", r.perWeek)}">${r.perWeek.toFixed(1)}</span></td><td class="n">${(r.calls / r.meetings).toFixed(1)}</td><td class="n">${pct(r.ttmAttainment)}</td></tr>`).join("") + "</tbody>";
     $("actSdrs").innerHTML = `<thead><tr><th>SDR</th><th class="n">Calls</th><th class="n">Connects</th><th class="n">Connect rate</th><th class="n">Emails</th><th class="n">Emails per call</th><th class="n">Booked</th><th class="n">Held</th><th class="n">Show rate</th></tr></thead><tbody>` +
       sd.map((r) => { const cr = r.connects / r.calls, sr = r.held / r.booked;
-        return `<tr><td>${esc(r.name)}<div class="sub">${r.team}</div></td><td class="n">${r.calls}</td><td class="n">${r.connects}</td><td class="n"><span class="pill st-${cr >= 0.08 ? "good" : cr >= 0.05 ? "warn" : "bad"}">${pct1(cr)}</span></td>
-        <td class="n">${r.emails.toLocaleString("en-GB")}</td><td class="n">${(r.emails / r.calls).toFixed(1)}</td><td class="n">${r.booked}</td><td class="n">${r.held}</td><td class="n"><span class="pill st-${sr >= 0.75 ? "good" : sr >= 0.65 ? "warn" : "bad"}">${pct(sr)}</span></td></tr>`; }).join("") + "</tbody>";
+        return `<tr${lvA(worst(E.level("connect", cr), E.level("show", sr)))}><td>${esc(r.name)}<div class="sub">${r.team}</div></td><td class="n">${r.calls}</td><td class="n">${r.connects}</td><td class="n"><span class="pill st-${E.level("connect", cr)}">${pct1(cr)}</span></td>
+        <td class="n">${r.emails.toLocaleString("en-GB")}</td><td class="n">${(r.emails / r.calls).toFixed(1)}</td><td class="n">${r.booked}</td><td class="n">${r.held}</td><td class="n"><span class="pill st-${E.level("show", sr)}">${pct(sr)}</span></td></tr>`; }).join("") + "</tbody>";
   }
 
   // ---------- Renewals ----------
@@ -1631,7 +1781,7 @@ footer p { margin: 0; }
     $("rnKeys").innerHTML = R.bands.map((b) => `<span style="--c:${cols[b.band]}">${b.band}: ${b.accounts} accounts, ${gbpK(b.arr)}</span>`).join("");
     const order = { Critical: 0, "At risk": 1, Healthy: 2 };
     $("rnTable").innerHTML = `<thead><tr><th>Account</th><th>Owner</th><th class="n">Renews</th><th class="n">ARR</th><th class="n">Health</th><th>Warning signs</th><th>Next action</th></tr></thead><tbody>` +
-      RENEW.slice().sort((a, b) => order[a.band] - order[b.band] || (a.renewalDate < b.renewalDate ? -1 : 1)).map((a) => `<tr><td>${esc(a.account)}<div class="sub mono">${a.id}</div></td><td>${esc(a.owner)}<div class="sub">${a.team}</div></td>
+      RENEW.slice().sort((a, b) => order[a.band] - order[b.band] || (a.renewalDate < b.renewalDate ? -1 : 1)).map((a) => `<tr${lvA(bandLv(a.band))}><td>${esc(a.account)}<div class="sub mono">${a.id}</div></td><td>${esc(a.owner)}<div class="sub">${a.team}</div></td>
         <td class="n">${fmtDate(a.renewalDate)}<div class="sub">${E.daysBetween(AS_OF, a.renewalDate)} days</div></td><td class="n">${gbpK(a.arr)}</td>
         <td class="n"><span class="pill st-${bandLv(a.band)}">${a.score} · ${a.band}</span></td>
         <td style="min-width:200px">${a.drivers.length ? a.drivers.slice(0, 3).map((d) => `<div class="sub">${esc(d.why)} <span class="mono">−${d.pts}</span></div>`).join("") : `<span class="sub">None</span>`}</td>
@@ -1641,12 +1791,12 @@ footer p { margin: 0; }
 
   // ---------- Win/loss, calibration, attribution ----------
   function renderWinLoss() {
-    const W = E.winLoss(OPPS_E);
+    const W = E.winLoss(OPPS_E), cmpLv = (c) => (c.winRate >= W.overallWinRate + 0.05 ? "good" : c.winRate >= W.overallWinRate - 0.05 ? "warn" : "bad");
     $("wlReasons").innerHTML = `<thead><tr><th>Reason</th><th class="n">Deals</th><th class="n">Value lost</th><th style="min-width:120px">Share of value</th><th>Most often lost at</th></tr></thead><tbody>` +
       W.reasons.map((r) => { const si = r.byStage.indexOf(Math.max(...r.byStage));
         return `<tr><td>${esc(r.reason)}</td><td class="n">${r.count}</td><td class="n">${gbpK(r.value)}</td><td>${bar(r.value / W.lostValue)}</td><td>${E.STAGES[si].name}</td></tr>`; }).join("") + "</tbody>";
     $("wlComps").innerHTML = `<thead><tr><th>Competitor</th><th class="n">Deals</th><th class="n">Win rate</th><th class="n">Lost to them</th><th class="n">Value lost</th></tr></thead><tbody>` +
-      W.competitors.map((c) => `<tr><td>${c.competitor}</td><td class="n">${c.deals}</td><td class="n"><span class="pill st-${c.winRate >= W.overallWinRate + 0.05 ? "good" : c.winRate >= W.overallWinRate - 0.05 ? "warn" : "bad"}">${pct(c.winRate)}</span></td><td class="n">${c.lostToThem}</td><td class="n">${gbpK(c.lostValue)}</td></tr>`).join("") + "</tbody>";
+      W.competitors.map((c) => `<tr${lvA(cmpLv(c))}><td>${c.competitor}</td><td class="n">${c.deals}</td><td class="n"><span class="pill st-${cmpLv(c)}">${pct(c.winRate)}</span></td><td class="n">${c.lostToThem}</td><td class="n">${gbpK(c.lostValue)}</td></tr>`).join("") + "</tbody>";
     const worst = W.competitors.filter((c) => c.competitor !== "No competitor identified").sort((a, b) => a.winRate - b.winRate)[0];
     $("wlNote").innerHTML = `Overall win rate on these deals is ${pct(W.overallWinRate)}. ${worst.competitor} is the one to prepare for: ${pct(worst.winRate)} across ${worst.deals} deals. Competitors are anonymised as Rival A, B and C.`;
     $("calTable").innerHTML = `<thead><tr><th>Category</th><th class="n">Assumed</th><th class="n">Calibrated</th><th class="n">History</th><th class="n">Difference</th></tr></thead><tbody>` +
@@ -1755,7 +1905,7 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
         <div class="card"><div class="head"><h3>By owner</h3></div><div class="tablewrap"><table><thead><tr><th>Owner</th><th class="n">Deals</th><th class="n">Value</th><th class="n">Flagged</th></tr></thead><tbody>${R.owners.map((o) => `<tr><td>${esc(o.owner)}</td><td class="n">${o.deals}</td><td class="n">${gbpK(o.value)}</td><td class="n">${o.flagged}</td></tr>`).join("")}</tbody></table></div></div></div>`;
       h += `<div class="card"><div class="head"><h3>Deals and next steps</h3></div><div class="tablewrap"><table><thead><tr><th>Deal</th><th>Owner</th><th>Stage</th><th class="n">Amount</th><th class="n">Close</th><th class="n">Health</th><th>Issues and next steps</th></tr></thead><tbody>` +
         hy.deals.slice().sort((a, b) => a.health - b.health || b.amount - a.amount).map((d) => `<tr><td>${esc(d.account)}<div class="sub mono">${esc(d.id)}</div></td><td>${esc(d.owner)}</td><td>${d.stage}<div class="sub">${d.forecastCategory}</div></td><td class="n">${d.amount ? gbp(d.amount) : "–"}</td><td class="n">${fmtDate(d.closeDate)}</td>
-        <td class="n"><span class="health num" style="color:var(${d.health >= 80 ? "--good" : d.health >= 60 ? "--warn" : "--bad"})">${d.health}</span></td><td style="min-width:300px">${stepsCell(d)}</td></tr>`).join("") + `</tbody></table></div></div>`;
+        <td class="n"><span class="health num" style="color:var(${LVC[E.level("dealHealth", d.health)]})">${d.health}</span></td><td style="min-width:300px">${stepsCell(d)}</td></tr>`).join("") + `</tbody></table></div></div>`;
     }
     $("impOut").innerHTML = h;
   }
@@ -1766,6 +1916,154 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
   $("impCopy").addEventListener("click", () => { const hdr = SAMPLE_CSV.split("\n")[0];
     const done = () => { $("impCopy").textContent = "Copied"; setTimeout(() => ($("impCopy").textContent = "Copy header row"), 1500); };
     try { navigator.clipboard.writeText(hdr).then(done, () => { $("impText").focus(); $("impText").setSelectionRange(0, hdr.length); }); } catch (err) { $("impText").focus(); $("impText").setSelectionRange(0, hdr.length); } });
+
+
+  // ---------- Manager view: each rep's year from the metrics alone ----------
+  const E_TEAMS_SEL = $("mvTeam");
+  E_TEAMS_SEL.innerHTML += E.TEAMS.map((t) => `<option value="${t.name}">${t.manager}, ${t.name}</option>`).join("");
+  function trendSpark(qs, lv) {
+    const W = 92, H = 30, lo = 0.3, hi = 1.3, n = qs.length, X = (i) => 4 + (i * (W - 8)) / (n - 1), Y = (v) => 3 + (H - 6) * (1 - (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo));
+    const pts = qs.map((q, i) => (q.attainment == null ? null : [X(i), Y(q.attainment)])).filter(Boolean);
+    const col = LVC[lv] || "--accent";
+    return `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true"><line x1="2" x2="${W - 2}" y1="${Y(1)}" y2="${Y(1)}" style="stroke:var(--line)" stroke-dasharray="3 2"/>` +
+      (pts.length > 1 ? `<path d="M${pts.map((p) => p.join(",")).join("L")}" fill="none" style="stroke:var(${col})" stroke-width="2" stroke-linejoin="round"/>` : "") +
+      pts.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="${i === pts.length - 1 ? 3 : 2}" style="fill:var(${col})"/>`).join("") + "</svg>";
+  }
+  function mvRead(r) {
+    const v = r.quarters.filter((q) => q.attainment != null).map((q) => q.attainment), parts = [];
+    parts.push(v.length > 1 ? `${r.trend.label} over ${v.length} quarters (${pct(v[0])} → ${pct(v[v.length - 1])})` : "Too early for a trend");
+    parts.push(r.tenure.verdict.toLowerCase() + (r.ramping ? ", still ramping" : ""));
+    if (r.winRate >= TTM_WR + 0.05) parts.push(`wins more often than the company (${pct(r.winRate)} vs ${pct(TTM_WR)})`);
+    else if (r.winRate <= TTM_WR - 0.05) parts.push(`wins less often than the company (${pct(r.winRate)} vs ${pct(TTM_WR)})`);
+    const need = 1 / Math.max(0.01, TTM_WR);
+    if (isFinite(r.q4Coverage) && r.q4Coverage < need) parts.push(`Q4 pipeline is ${x(r.q4Coverage)} of what's left to find, under the ${x(need)} needed`);
+    if (r.cleanRate < 0.6) parts.push(`only ${pct(r.cleanRate)} of open deals are clean`);
+    const t = parts.join("; ");
+    return t.charAt(0).toUpperCase() + t.slice(1) + ".";
+  }
+  function renderTeam(c) {
+    const MV = E.managerView(opps, deals, c), sel = $("mvTeam").value, teams = MV.teams.filter((t) => !sel || t.name === sel), reps = teams.flatMap((t) => t.reps);
+    const tm = sel && E.TEAMS.find((t) => t.name === sel), ql = MV.quarterLabels;
+    $("mvNote").innerHTML = sel ? `Showing <b>${tm.manager}</b>'s ${reps.length} reps in ${sel}. Rank is out of all ${MV.reps.length} reps.` : `Every team and rep, one table per manager. Pick a manager to see just their team.`;
+    const cnt = (f) => reps.filter(f).length, avg = reps.reduce((a, r) => a + r.ttm, 0) / (reps.length || 1);
+    $("mvFacts").innerHTML = factsHtml([
+      ["Reps", reps.length, cnt((r) => r.ramping) + " still ramping"],
+      ["Average TTM attainment", pct(avg), "simple average of the reps shown"],
+      ["Trend", `${cnt((r) => r.trend.label === "Improving")} up · ${cnt((r) => r.trend.label === "Declining")} down`, cnt((r) => r.trend.label === "Steady") + " steady"],
+      ["Reps behind for tenure", cnt((r) => r.level === "bad"), cnt((r) => r.level === "good") + " ahead, " + cnt((r) => r.level === "warn") + " in line"],
+      ["Win rate (TTM)", pct(reps.reduce((a, r) => a + r.won, 0) / (reps.reduce((a, r) => a + r.closed, 0) || 1)), "company " + pct(TTM_WR)],
+    ]);
+    const qth = ql.map((l) => `<th class="n">${l}</th>`).join("");
+    const qtd = (q) => `<td class="n qcell">${q.attainment == null ? `<span class="sub">Not started</span>` : `<span class="pill st-${E.level("attainment", q.attainment)}">${pct(q.attainment)}</span>`}</td>`;
+    $("mvTeams").innerHTML = teams.map((t) => {
+      const meet = (n) => { const a = ACT.reps.find((x) => x.name === n); return a ? a.meetings / (ACT.days / 7) : null; };
+      return `<div class="card"><div class="head"><h3>${t.manager} · ${t.name}</h3><div class="sub">${t.reps.length} reps. Team attainment by quarter: ${t.quarters.map((q) => q.attainment == null ? "–" : pct(q.attainment)).join(" → ")} (${t.trend.label.toLowerCase()}). Q4 so far ${pct(t.q4ToDate)}.</div></div>
+      <div class="tablewrap"><table><thead><tr><th>Rep</th>${qth}<th>Trend${help("repTrend")}</th><th class="n">TTM${help("ttmAttainment")}</th><th>Vs tenure${help("tenure")}</th><th class="n">Q4 so far${help("q4ToDate")}</th><th class="n">Win rate${help("winRate")}</th><th class="n">Avg won deal</th><th class="n">Cycle${help("cycle")}</th><th class="n">Meetings / wk${help("meetings")}</th><th class="n">Clean deals${help("health")}</th><th>Metrics read${help("metricsOnly")}</th></tr></thead><tbody>` +
+        t.reps.map((r) => { const m = meet(r.name);
+          return `<tr${lvA(r.level)}><td><b>${esc(r.name)}</b>${r.ramping ? ` <span class="pill st-warn">Ramping</span>` : ""}<div class="sub">${tenureFmt(r.months)} in seat · rank ${r.rank} of ${MV.reps.length}</div></td>${r.quarters.map(qtd).join("")}
+          <td><div class="tspark">${trendSpark(r.quarters, r.trend.level)}</div><div class="sub">${r.trend.label}${r.trend.label === "Too early" ? "" : ` (${sgn(r.trend.slope, (v) => Math.round(v * 100) + " pts")}/q)`}</div></td>
+          <td class="n"><b>${pct(r.ttm)}</b></td><td><span class="pill st-${r.level}">${r.tenure.verdict.replace(" for tenure", "")}</span><div class="sub">expected ${pct(r.tenure.expected)}</div></td>
+          <td class="n">${pct(r.q4ToDate)}</td><td class="n"><span class="pill st-${E.level("winRate", r.winRate)}">${pct(r.winRate)}</span><div class="sub">${r.won} of ${r.closed}</div></td>
+          <td class="n">${gbpK(r.avgWon)}</td><td class="n">${Math.round(r.cycle)} d</td><td class="n">${m == null ? "–" : `<span class="pill st-${E.level("meetings", m)}">${m.toFixed(1)}</span>`}</td>
+          <td class="n">${pct(r.cleanRate)} <span class="sub">(${r.openDeals})</span></td><td class="mvread">${esc(mvRead(r))}</td></tr>`; }).join("") +
+        `<tr class="avg"><td><b>Team</b><div class="sub">weighted by quota</div></td>${t.quarters.map(qtd).join("")}<td><div class="tspark">${trendSpark(t.quarters, t.trend.level)}</div><div class="sub">${t.trend.label}</div></td><td></td><td class="sub">${t.behind} behind</td><td class="n">${pct(t.q4ToDate)}</td><td colspan="6"></td></tr></tbody></table></div>
+      <p class="skey">Metrics only. Quarter cells: Good at 100% of quota or more, Watch from 90%, Act below. Trend: Improving or Declining at 4 points a quarter or more, from a straight line through the quarters worked. The row status, used by the Show filter, is attainment against what's expected at the rep's tenure. Q4 so far isn't rated: the quarter is only half done.</p></div>`;
+    }).join("");
+  }
+
+  // ---------- Definitions ----------
+  const slug = (t) => t.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "");
+  const fmtT = (t, v) => ({ pct: () => (Math.abs(v * 100 - Math.round(v * 100)) < 1e-6 ? Math.round(v * 100) : (v * 100).toFixed(1)) + "%", x: () => v.toFixed(2), n: () => String(v), mo: () => v + " months", d: () => v + " days", h: () => v + " hours", gbp: () => "£" + v, pts: () => String(v) })[t.unit]();
+  const thrLine = (k) => { const t = E.THRESHOLDS[k], w = t.words || ["Good", "Watch", "Act"];
+    return t.up ? `${w[0]} at ${fmtT(t, t.good)} or more, ${w[1]} from ${fmtT(t, t.ok)}, ${w[2]} below` : `${w[0]} at ${fmtT(t, t.good)} or less, ${w[1]} up to ${fmtT(t, t.ok)}, ${w[2]} above`; };
+  function renderDefs() {
+    const q = $("defQ").value.trim().toLowerCase();
+    let shown = 0;
+    $("defJump").innerHTML = E.GROUPS.map((g) => `<a href="#dg-${slug(g)}">${g}</a>`).join("");
+    $("defGroups").innerHTML = E.GROUPS.map((g) => {
+      const items = E.GLOSSARY.filter((d) => d.group === g && (!q || (d.term + " " + d.short + " " + (d.more || "") + " " + (d.formula || "")).toLowerCase().includes(q)));
+      shown += items.length;
+      if (!items.length) return "";
+      return `<div class="card" id="dg-${slug(g)}"><div class="head"><h3>${g}</h3></div><div class="deflist">` + items.map((d) => `<div class="defitem" id="def-${d.key}"><h4>${esc(d.term)}</h4><div><p>${esc(d.short)}</p>${d.more ? `<p class="more">${esc(d.more)}</p>` : ""}
+        <div class="meta">${d.formula ? `<span>Formula: <code>${esc(d.formula)}</code></span>` : ""}${d.threshold ? `<span>${thrLine(d.threshold)}.</span>` : ""}${d.calc ? `<a class="golink" href="#calc-${d.calc}">Worked example →</a>` : ""}${d.link ? `<a class="golink" href="#${d.link}">See the lines →</a>` : ""}</div></div></div>`).join("") + `</div></div>`;
+    }).join("");
+    $("defNone").hidden = shown > 0;
+  }
+  $("defQ").addEventListener("input", renderDefs);
+
+  // ---------- Sample calculations ----------
+  function renderCalcs() {
+    const WORD = (k, lv) => (E.THRESHOLDS[k].words || ["Good", "Watch", "Act"])[["good", "warn", "bad"].indexOf(lv)];
+    const ex = E.THRESHOLDS.nrr, exLv = E.level("nrr", ex.example);
+    $("thrExample").innerHTML = `<b>Worked example.</b> Net revenue retention is <b class="mono">${fmtT(ex, ex.example)}</b>. The Good line is ${fmtT(ex, ex.good)} and the Watch line is ${fmtT(ex, ex.ok)}. ${fmtT(ex, ex.example)} is under the Good line but over the Watch line, so it's ${pill(exLv, WORD("nrr", exLv))}: customers are growing, but not yet at the rate that marks a strong expansion engine. Had it fallen below ${fmtT(ex, ex.ok)} it would be ${pill("bad", "Act")}, because the customer base would be shrinking.`;
+    const defOf = (k) => { const d = E.GLOSSARY.find((g) => g.threshold === k); return d ? help(d.key) : ""; };
+    $("thrTable").innerHTML = `<thead><tr><th>Measure</th><th class="n">Good</th><th class="n">Watch</th><th class="n">Act</th><th>Why the line sits there</th><th>Example</th></tr></thead><tbody>` +
+      Object.entries(E.THRESHOLDS).map(([k, t]) => { const lv = E.level(k, t.example), f = (v) => fmtT(t, v);
+        return `<tr><td><b>${esc(t.label)}</b>${defOf(k)}</td><td class="n">${t.up ? "≥ " + f(t.good) : "≤ " + f(t.good)}</td><td class="n">${t.up ? f(t.ok) + " to " + f(t.good) : f(t.good) + " to " + f(t.ok)}</td><td class="n">${t.up ? "< " + f(t.ok) : "> " + f(t.ok)}</td>
+        <td class="sub" style="min-width:280px">${esc(t.why)}</td><td style="white-space:nowrap"><span class="mono">${f(t.example)}</span> → ${pill(lv, WORD(k, lv))}</td></tr>`; }).join("") + "</tbody>";
+    $("calcJump").innerHTML = `<a href="#calc-thresholds">Good, Watch and Act</a>` + E.SAMPLE_CALCS.map((c) => `<a href="#calc-${c.key}">${c.title.split(":")[0]}</a>`).join("");
+    $("calcCards").innerHTML = E.SAMPLE_CALCS.map((c) => {
+      const r = c.run(), defs = E.GLOSSARY.filter((g) => g.calc === c.key), f = defs.find((g) => g.formula);
+      const lv = r.threshold && r.value != null ? E.level(r.threshold, r.value) : null;
+      return `<div class="card calc" id="calc-${c.key}"><div class="head"><h3>${esc(c.title)}</h3><div class="sub">Definition: ${defs.map((g) => `<a class="golink" href="#def-${g.key}">${esc(g.term)}</a>`).join(", ")}</div></div>
+        ${f ? `<div class="formula">${esc(f.formula)}</div>` : ""}
+        <div class="tablewrap"><table class="steps-t"><thead><tr><th>Step</th><th>Working</th><th class="n">Result</th></tr></thead><tbody>${r.steps.map(([a, b, v]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td><td class="n mono">${esc(v)}</td></tr>`).join("")}</tbody></table></div>
+        ${lv || r.result ? `<p class="calcres">${lv ? pill(lv, WORD(r.threshold, lv)) : ""}<span>${esc(r.result || thrLine(r.threshold) + ".")}</span></p>` : ""}</div>`;
+    }).join("");
+  }
+
+  // ---------- ? tooltips ----------
+  const tip = document.createElement("div"); tip.className = "tip"; tip.id = "tip"; tip.setAttribute("role", "tooltip"); tip.hidden = true; document.body.appendChild(tip);
+  let tipFor = null, tapArm = null, pinned = false, tipY = 0; // pinned: opened by a tap, so stray mouse events don't close it
+  function tipShow(b) {
+    const g = E.GLOSS[b.dataset.def]; if (!g) return;
+    tip.innerHTML = `<b>${esc(g.term)}</b>${esc(g.short)}<span class="more">${matchMedia("(hover: none)").matches ? "Tap again" : "Click"} for the full definition</span>`;
+    tip.hidden = false; tipFor = b; tipY = scrollY; b.setAttribute("aria-describedby", "tip");
+    const r = b.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.left = Math.min(Math.max(8, r.left + r.width / 2 - tw / 2), innerWidth - tw - 8) + "px";
+    tip.style.top = (r.bottom + 8 + th > innerHeight - 8 ? r.top - th - 8 : r.bottom + 8) + "px";
+  }
+  function tipHide() { pinned = false; tip.hidden = true; if (tipFor) tipFor.removeAttribute("aria-describedby"); tipFor = null; }
+  document.addEventListener("mouseover", (e) => { const b = e.target.closest(".help"); if (b && !pinned) tipShow(b); });
+  document.addEventListener("mouseout", (e) => { const b = e.target.closest(".help"); if (b && !pinned && !b.contains(e.relatedTarget)) tipHide(); });
+  document.addEventListener("focusin", (e) => { const b = e.target.closest(".help"); if (b) tipShow(b); else if (tipFor) tipHide(); });
+  document.addEventListener("pointerdown", (e) => { const b = e.target.closest(".help"); tapArm = b && e.pointerType !== "mouse" && tipFor !== b ? b : null; }, true);
+  // Capture phase, so a ? inside a clickable row opens its definition without also triggering the row.
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest(".help");
+    if (!b) { if (tipFor) tipHide(); return; }
+    e.preventDefault(); e.stopPropagation();
+    if (tapArm === b) { tapArm = null; tipShow(b); pinned = true; return; }
+    tipHide(); location.hash = "def-" + b.dataset.def;
+  }, true);
+  addEventListener("scroll", () => { if (tipFor && Math.abs(scrollY - tipY) > 24) tipHide(); }, { passive: true });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && tipFor) tipHide(); });
+
+  // ---------- Status filter (Show: All, Good, Watch list, Watch, Act) ----------
+  const FNAME = { good: "Good", list: "Watch list", warn: "Watch", bad: "Act" };
+  const fmatch = (lv, f) => f === "all" || (f === "list" ? lv !== "good" : lv === f);
+  function applyFilter() {
+    const f = document.body.dataset.f || "all", panel = document.querySelector("section.panel[role=tabpanel]:not([hidden])");
+    document.querySelectorAll(".fempty, .fempty-msg").forEach((x) => x.remove());
+    if (!panel) return;
+    const tagged = [...panel.querySelectorAll("[data-lv]")], shown = tagged.filter((el) => fmatch(el.dataset.lv, f)).length;
+    $("fcount").textContent = !tagged.length ? "Nothing on this tab is rated" : f === "all" ? tagged.length + " rated rows and tiles on this tab" : `Showing ${shown} of ${tagged.length} rated on this tab`;
+    if (f === "all") return;
+    const boxes = new Set(tagged.map((el) => el.parentElement));
+    for (const box of boxes) {
+      if ([...box.children].some((ch) => !ch.dataset.lv || fmatch(ch.dataset.lv, f))) continue;
+      const msg = `Nothing here is rated ${FNAME[f]}.`;
+      if (box.tagName === "TBODY") box.insertAdjacentHTML("beforeend", `<tr class="fempty"><td colspan="20">${msg}</td></tr>`);
+      else box.insertAdjacentHTML("beforeend", `<div class="fempty-msg">${msg}</div>`);
+    }
+  }
+  document.querySelectorAll(".fb").forEach((b) => b.addEventListener("click", () => {
+    document.body.dataset.f = b.dataset.f;
+    document.querySelectorAll(".fb").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    applyFilter();
+  }));
+  const SB = $("stickybar");
+  addEventListener("scroll", () => SB.classList.toggle("stuck", SB.getBoundingClientRect().top <= 0 && scrollY > 0), { passive: true });
 
   function render() {
     const c = ctx();
@@ -1782,27 +2080,37 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
     const CP = renderCapacity(c);
     renderImport();
     renderSummary(c, h, E.coverage(deals, c), E.teamReport(deals, c), MR, CP);
+    renderTeam(c);
+    applyFilter();
   }
 
   // Tabs routed on the hash; metric section anchors open the metrics tab.
-  const TABS = ["start", "method", "summary", "coverage", "hygiene", "commission", "activity", "marketing", "renewals", "metrics", "planning", "data"];
+  const TABS = ["start", "method", "summary", "team", "coverage", "hygiene", "commission", "activity", "marketing", "renewals", "metrics", "planning", "data", "defs", "calcs"];
   function show(hash) {
     let tab = hash, anchor = null;
     if (hash.startsWith("m-")) { tab = "metrics"; anchor = hash; }
+    else if (/^(def|dg)-/.test(hash)) { tab = "defs"; anchor = hash; }
+    else if (hash.startsWith("calc-")) { tab = "calcs"; anchor = hash; }
     if (!TABS.includes(tab)) tab = "start";
+    tipHide();
     for (const t of TABS) { $("p-" + t).hidden = t !== tab; $("t-" + t).setAttribute("aria-selected", String(t === tab)); }
+    if (anchor && !$(anchor) && tab === "defs") { $("defQ").value = ""; renderDefs(); }
     if (anchor) { const el = $(anchor); if (el) el.scrollIntoView({ block: "start" }); }
+    else { const top = $("tabhint").getBoundingClientRect().bottom + scrollY; if (scrollY > top) scrollTo(0, top); }
+    $("t-" + tab).scrollIntoView({ block: "nearest", inline: "nearest" });
+    applyFilter();
   }
   document.querySelectorAll("nav.tabs button").forEach((b) => b.addEventListener("click", () => { location.hash = b.dataset.tab; show(b.dataset.tab); }));
   window.addEventListener("hashchange", () => show(location.hash.slice(1)));
 
   ["quota", "won", "wr", "stale"].forEach((id) => $(id).addEventListener("input", render));
-  $("ownerFilter").addEventListener("change", render);
+  [["fIssue", "issue"], ["fTeam", "team"], ["ownerFilter", "owner"], ["fStage", "stage"], ["fCat", "cat"]].forEach(([id, k]) => $(id).addEventListener("change", () => { HF[k] = $(id).value; render(); }));
+  $("mvTeam").addEventListener("change", () => { renderTeam(ctx()); applyFilter(); });
   $("repPick").addEventListener("change", render);
   $("viewAs").addEventListener("change", render);
   $("repTable").addEventListener("click", (e) => { const b = e.target.closest("[data-review]"); if (!b) return; $("repPick").value = b.dataset.review; render(); $("repDealCard").scrollIntoView({ behavior: "smooth", block: "start" }); });
-  $("clearFilter").addEventListener("click", () => { ruleFilter = null; render(); });
-  const pickRule = (el) => { const id = el.dataset.rule; ruleFilter = ruleFilter === id ? null : id; render(); };
+  $("clearFilter").addEventListener("click", () => { for (const k of Object.keys(HF)) HF[k] = ""; render(); });
+  const pickRule = (el) => { const id = el.dataset.rule; HF.issue = HF.issue === id ? "" : id; render(); };
   $("ruleTable").addEventListener("click", (e) => { const tr = e.target.closest("tr.ruleRow"); if (tr) pickRule(tr); });
   $("ruleTable").addEventListener("keydown", (e) => { const tr = e.target.closest("tr.ruleRow"); if (tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pickRule(tr); } });
 
@@ -1819,11 +2127,12 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
   // ---------- Guided tour ----------
   const tl = () => { const c = ctx(); return { c, l: E.landing(deals, c), cv: E.coverage(deals, c), cf: E.confidence(deals, c, FA) }; };
   const TOUR = [
-    { tab: "start", sel: ".start-intro", title: "What this is", text: () => "A revenue operations command view for a sales team, built with AI on invented data. It shows how I'd run revenue operations, and how far AI can take the build. About two minutes, fourteen short stops." },
+    { tab: "start", sel: ".start-intro", title: "What this is", text: () => `A revenue operations command view for a sales team, built with AI on invented data. It shows how I'd run revenue operations, and how far AI can take the build. About two minutes, ${TOUR.length} short stops.` },
     { tab: "summary", sel: "#sumVerdict", title: "Answer first", text: () => { const { cv, l } = tl(); return `The first screen gives the answer: ${pct1(cv.attainmentToDate)} of quota booked, likely to land at ${gbpK(l.likely)}. A leader sees where we'll finish before any detail.`; } },
     { tab: "summary", sel: "#decTable", card: true, title: "Then what to decide", text: () => "Most reports stop at what happened. This one lists the decisions needed this week, who owns each, and a link to the evidence." },
     { tab: "summary", sel: "#landChart", card: true, title: "A range, and how far to trust it", text: () => { const { l, cf } = tl(); return `A forecast is a range, not one number: ${gbpK(l.floor)} to ${gbpK(l.stretch)}. The confidence score, ${cf.score}/100, says how much of it is backed by clean data and buyer evidence.`; } },
     { tab: "summary", sel: "#teamTable", card: true, title: "Where the problem sits", text: () => "Problems usually sit in one team, not everywhere. Growth is flagged, and the Why column names every threshold it missed." },
+    { tab: "team", sel: "#mvTeams .card", title: "Each rep, quarter by quarter", text: () => "The manager view: every rep's last four quarters, their trend, win rate and pipeline, with a plain-English read. It's built from the metrics alone and labelled that way, as a starting point for a conversation." },
     { tab: "coverage", sel: "#bars", card: true, title: "Coverage with and without the problems", text: () => { const { cv } = tl(); return `On paper coverage is ${x(cv.rawCoverage)}. Take out deals with problems and it's ${x(cv.cleanCoverage)}, against ${x(cv.required)} needed. That gap is the case for pipeline hygiene.`; } },
     { tab: "hygiene", sel: "#actionTable", card: true, title: "Every flag has a next step", text: () => "A red flag on its own is noise. Each one comes with the action that fixes it, ranked by priority and deal value." },
     { tab: "commission", sel: ".viewbar", title: "Commission, seen by the right people", text: () => "Executives see every team. Switch to a team lead and you see only that team and its reps. In production, sign-in would enforce it." },
@@ -1832,6 +2141,7 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
     { tab: "metrics", sel: "#calTable", card: true, title: "Calibrate before you forecast", text: () => `Forecast categories are checked against what actually closed. Commit has landed ${pct(CAL.rates.Commit)} of the time, not the ${pct(E.CAT_RATE.Commit)} assumed, so every landing figure uses the real rate.` },
     { tab: "planning", sel: "#scDeals", card: true, title: "What if, and next year", text: () => "Mark deals won, lost or pulled in and watch the landing and commission move. Below it, next year's hiring plan with ramp and attrition." },
     { tab: "data", sel: "#impText", card: true, title: "It runs on real data", text: () => "Load a CSV export from a CRM and the same checks run on real deals. The file never leaves the browser." },
+    { tab: "defs", sel: "#defGroups .card", title: "Every term explained", text: () => "Hover any ? on the page for a one-line definition, or come here for the full list, including each MEDDPICC element. Sample calculations works through the maths and shows where Good, Watch and Act are set." },
     { tab: "method", sel: "#p-method .card", title: "How it was built", text: () => "Every formula, who sees what, and how I built it: I made the decisions, the AI wrote the code, and every number was tested. Thanks for taking the tour." },
   ];
   let tourAt = -1;
@@ -1863,6 +2173,10 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
   $("startTests").textContent = $("qaList").children.length;
   $("dataLine").textContent = `${deals.length} open deals, ${E.REPS.length} reps in ${E.TEAMS.length} teams, ${E.SDRS.length} SDRs, ${leads.length} leads, ${RENEW.length} upcoming renewals, ${opps.length} closed opportunities and eleven quarters of revenue history.`;
 
+  renderDefs();
+  renderCalcs();
+  // Static ? icons written into the page get their label and text here.
+  document.querySelectorAll("button.help").forEach((b) => { const g = E.GLOSS[b.dataset.def]; if (!b.textContent) b.textContent = "?"; if (!b.getAttribute("aria-label")) b.setAttribute("aria-label", "What is " + (g ? g.term : "this") + "?"); });
   renderActivity();
   const RR = renderRenewals();
   const WL = renderWinLoss();
