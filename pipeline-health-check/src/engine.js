@@ -241,7 +241,10 @@
   // ---------- Coverage ----------
   function coverage(deals, ctx) {
     const { asOf, periodStart, periodEnd, quota, closedWon, winRate } = ctx;
-    const inPeriod = deals.filter((d) => d.closeDate >= periodStart && d.closeDate <= periodEnd);
+    // Omitted deals are open but the rep has said they won't land this period, so they're shown by category
+    // but left out of every coverage figure (raw, clean and weighted).
+    const inPeriodAll = deals.filter((d) => d.closeDate >= periodStart && d.closeDate <= periodEnd);
+    const inPeriod = inPeriodAll.filter((d) => d.forecastCategory !== "Omitted"), omitted = inPeriodAll.filter((d) => d.forecastCategory === "Omitted");
     const remaining = Math.max(0, quota - closedWon);
     const raw = sum(inPeriod, (d) => d.amount || 0);
     const weighted = sum(inPeriod, (d) => (d.amount || 0) * (stageOf(d.stage)?.prob || 0));
@@ -249,9 +252,9 @@
     const ratio = (x) => (remaining > 0 ? x / remaining : Infinity);
     const required = winRate > 0 ? 1 / winRate : Infinity;
     const byCat = {};
-    for (const d of inPeriod) byCat[d.forecastCategory] = (byCat[d.forecastCategory] || 0) + (d.amount || 0);
+    for (const d of inPeriodAll) byCat[d.forecastCategory] = (byCat[d.forecastCategory] || 0) + (d.amount || 0);
     return {
-      inPeriodCount: inPeriod.length, outOfPeriodCount: deals.length - inPeriod.length,
+      inPeriodCount: inPeriod.length, outOfPeriodCount: deals.length - inPeriodAll.length, omittedCount: omitted.length, omittedValue: sum(omitted, (d) => d.amount || 0),
       remaining, raw, weighted, clean, rawCoverage: ratio(raw), cleanCoverage: ratio(clean), weightedCoverage: ratio(weighted),
       required, pipelineNeeded: remaining * required, gap: Math.max(0, remaining * required - raw), cleanGap: Math.max(0, remaining * required - clean),
       attainmentToDate: quota > 0 ? closedWon / quota : 0, byCategory: byCat, daysLeft: Math.max(0, daysBetween(asOf, periodEnd)),
@@ -1102,11 +1105,11 @@
     G("Forecast and coverage", "landing", "Landing forecast", "Where the quarter is expected to finish, read three ways: floor, likely and stretch.", { more: "Floor counts only clean Commit deals. Likely weights every open deal by its forecast category, halving deals with hygiene issues. Stretch assumes all Commit and Best Case close.", formula: "closed won + Σ (deal amount × category rate × 0.5 if flagged)", threshold: "landing", calc: "landing" }),
     G("Forecast and coverage", "confidence", "Pipeline confidence", "A score out of 100 for how far the forecast can be trusted, based on clean data and buyer evidence.", { more: "Five parts: clean coverage (30 points), hygiene (20), MEDDPICC evidence on Commit and Best Case (20), past forecast accuracy (15) and how much of the gap clean Commit already covers (15).", threshold: "confidence", calc: "confidence" }),
     G("Forecast and coverage", "remaining", "Quota still to find", "The part of the quota not yet booked: quota − closed won. Coverage is measured against this.", { formula: "quota − closed won" }),
-    G("Forecast and coverage", "coverage", "Pipeline coverage (raw)", "Open pipeline closing this quarter, as a multiple of the quota still to find.", { formula: "in-quarter pipeline ÷ quota still to find", calc: "coverage" }),
+    G("Forecast and coverage", "coverage", "Pipeline coverage (raw)", "Open pipeline closing this quarter, as a multiple of the quota still to find. Deals the rep has marked Omitted are left out.", { formula: "in-quarter pipeline (excluding Omitted) ÷ quota still to find", calc: "coverage" }),
     G("Forecast and coverage", "cleanCoverage", "Clean coverage", "Coverage counting only deals with no hygiene issues. The gap between raw and clean shows how much pipeline rests on deals with problems.", { formula: "clean in-quarter pipeline ÷ quota still to find", calc: "coverage" }),
     G("Forecast and coverage", "weightedCoverage", "Weighted coverage", "Pipeline multiplied by each deal's stage probability, against quota still to find. 1.0x means the expected value covers the gap.", { formula: "Σ (amount × stage probability) ÷ quota still to find", calc: "weightedCoverage" }),
     G("Forecast and coverage", "coverageNeeded", "Coverage needed", "How many times the gap the pipeline must be, given the win rate: 1 ÷ win rate. At a 33% win rate that's the familiar 3x.", { formula: "1 ÷ win rate", calc: "coverage" }),
-    G("Forecast and coverage", "forecastCategory", "Forecast category", "The rep's call on each deal: Commit (will close this period), Best Case (could close), Pipeline (early or unlikely this period), Omitted (excluded).", { more: "Each stage allows only certain categories; a Commit at Discovery is flagged as a mismatch." }),
+    G("Forecast and coverage", "forecastCategory", "Forecast category", "The rep's call on each deal: Commit (will close this period), Best Case (could close), Pipeline (early or unlikely this period), Omitted (excluded).", { more: "Each stage allows only certain categories; a Commit at Discovery is flagged as a mismatch. Omitted deals stay visible in the category breakdown so you can see how much has been parked, but they count towards no coverage figure and 0% of the landing forecast, because the rep has already said they won't land this period." }),
     G("Forecast and coverage", "calibration", "Calibrated category rates", "How often deals in each forecast category actually closed in the past. The landing forecast uses these instead of assumed rates.", { formula: "won ÷ deals that sat in that category", calc: "calibration" }),
     G("Forecast and coverage", "forecastAcc", "Forecast accuracy", "How close the forecast call was to what actually booked.", { formula: "1 − |actual − call| ÷ actual", threshold: "forecastAcc", calc: "forecastAcc" }),
     G("Forecast and coverage", "forecastBias", "Forecast bias", "Whether the call tends to be too high or too low. Persistently negative means sandbagging; positive means over-calling.", { formula: "(call − actual) ÷ actual", more: "Beyond ±3% is labelled sandbagged or over-called.", calc: "forecastAcc" }),
@@ -1279,9 +1282,9 @@
     C("coverage", "Coverage: raw, clean and needed", () => {
       const ctx = { asOf: "2026-11-04", staleDays: 14, periodStart: "2026-10-01", periodEnd: "2026-12-31", quota: 1000000, closedWon: 400000, winRate: 0.25 };
       const base = { owner: "A", stage: "Proposal", closeDate: "2026-12-01", lastActivity: "2026-11-01", stageEntered: "2026-10-25", nextStep: "Call", forecastCategory: "Commit", pushCount: 0 };
-      const ds = [{ ...base, id: "1", amount: 1200000 }, { ...base, id: "2", amount: 600000, nextStep: "" }];
+      const ds = [{ ...base, id: "1", amount: 1200000 }, { ...base, id: "2", amount: 600000, nextStep: "" }, { ...base, id: "3", amount: 300000, stage: "Discovery", forecastCategory: "Omitted" }];
       const cv = coverage(ds, ctx);
-      return { steps: [["Quota still to find", "£1,000,000 − £400,000", fG(cv.remaining)], ["Pipeline closing this quarter", "£1,200,000 + £600,000", fG(cv.raw)],
+      return { steps: [["Quota still to find", "£1,000,000 − £400,000", fG(cv.remaining)], ["Left out: a deal the rep marked Omitted", "shown in the category breakdown, not counted in coverage", fG(cv.omittedValue)], ["Pipeline closing this quarter", "£1,200,000 + £600,000", fG(cv.raw)],
         ["Raw coverage", `${fG(cv.raw)} ÷ ${fG(cv.remaining)}`, fX(cv.rawCoverage)], ["Clean coverage", "the £600,000 deal has no next step, so it's left out: £1,200,000 ÷ £600,000", fX(cv.cleanCoverage)],
         ["Coverage needed at a 25% win rate", "1 ÷ 0.25", fX(cv.required)], ["Pipeline needed", `${fG(cv.remaining)} × ${cv.required}`, fG(cv.pipelineNeeded)]],
         result: `Covered on paper (${fX(cv.rawCoverage)}) but short on clean pipeline (${fX(cv.cleanCoverage)} against ${fX(cv.required)}): ${fG(cv.cleanGap)} of clean pipeline still to find.`, value: cv.cleanCoverage, out: cv }; }),

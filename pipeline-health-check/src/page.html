@@ -1108,7 +1108,7 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
         <dt>CSV import</dt><dd>Runs the same hygiene rules, next steps, coverage and landing calculations on your file, in the browser. Checks that need a column you didn't provide are skipped and listed, rather than failed.</dd>
         <div class="defgroup">Coverage</div>
         <dt>Quota remaining</dt><dd><code>quota − closed won</code>. Coverage is measured against what is left to find.</dd>
-        <dt>Raw, clean and weighted coverage</dt><dd><code>in-quarter pipeline ÷ quota remaining</code>; clean counts only deals with no hygiene issue; weighted multiplies by stage probability (target 1.0x).</dd>
+        <dt>Raw, clean and weighted coverage</dt><dd><code>in-quarter pipeline ÷ quota remaining</code>, leaving out deals the rep has marked Omitted; clean counts only deals with no hygiene issue; weighted multiplies by stage probability (target 1.0x).</dd>
         <dt>Coverage needed</dt><dd><code>1 ÷ win rate</code>. The "3x rule" is this with a 33% win rate baked in. The win rate box defaults to the TTM win rate from the metrics tab.</dd>
         <div class="defgroup">Next steps and commission</div>
         <dt>Next steps</dt><dd>One play per hygiene issue, one per MEDDPICC element below the stage minimum, and one for any discount or terms awaiting sign-off. Ranked by <code>priority × deal value</code>.</dd>
@@ -1278,7 +1278,7 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
       [cv.daysLeft + " days", "Left in the quarter"],
     ].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}${fh(k)}</span></div>`).join("");
     const rows = [
-      ["Raw", cv.rawCoverage, cv.raw, cv.inPeriodCount + " deals closing in Q4", cv.required],
+      ["Raw", cv.rawCoverage, cv.raw, cv.inPeriodCount + " deals closing in Q4" + (cv.omittedCount ? `, not counting ${cv.omittedCount} Omitted (${gbpK(cv.omittedValue)})` : ""), cv.required],
       ["Clean", cv.cleanCoverage, cv.clean, "Excludes deals with any hygiene issue", cv.required],
       ["Weighted", cv.weightedCoverage, cv.weighted, "Amount × stage probability. Target is 1.0x", 1],
     ];
@@ -1291,12 +1291,14 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
     }).join("");
     const cats = [["Commit", "var(--good)"], ["Best Case", "var(--accent)"], ["Pipeline", "var(--muted)"], ["Omitted", "var(--line)"]];
     const tot = cats.reduce((a, [k]) => a + (cv.byCategory[k] || 0), 0) || 1;
-    $("catSub").textContent = gbp(cv.raw) + " across " + cv.inPeriodCount + " deals; " + cv.outOfPeriodCount + " more close after the quarter";
+    $("catSub").textContent = gbp(cv.raw + cv.omittedValue) + " across " + (cv.inPeriodCount + cv.omittedCount) + " deals; " + gbp(cv.omittedValue) + " of it Omitted and left out of coverage. " + cv.outOfPeriodCount + " more close after the quarter";
     $("catStack").innerHTML = cats.map(([k, col]) => `<span style="width:${((cv.byCategory[k] || 0) / tot) * 100}%;background:${col}" title="${k}"></span>`).join("");
     $("catKeys").innerHTML = cats.map(([k, col]) => `<span style="--c:${col}">${k}</span>`).join("");
     let run = 0;
-    $("catTable").innerHTML = `<thead><tr><th>Category</th><th class="n">Value</th><th class="n">Running total</th><th class="n">vs remaining</th></tr></thead><tbody>` +
-      cats.map(([k]) => { const val = cv.byCategory[k] || 0; run += val;
+    $("catTable").innerHTML = `<thead><tr><th>Category${help("forecastCategory")}</th><th class="n">Value</th><th class="n">Running total</th><th class="n">vs remaining</th></tr></thead><tbody>` +
+      cats.map(([k]) => { const val = cv.byCategory[k] || 0;
+        if (k === "Omitted") return `<tr><td>${k}<div class="sub">Excluded from coverage</div></td><td class="n">${gbpK(val)}</td><td class="sub" colspan="2" style="white-space:normal">Not counted: the rep says these won't land this quarter</td></tr>`;
+        run += val;
         return `<tr><td>${k}</td><td class="n">${gbpK(val)}</td><td class="n">${gbpK(run)}</td><td class="n">${cv.remaining ? pct(run / cv.remaining) : "–"}</td></tr>`; }).join("") + "</tbody>";
   }
 

@@ -215,11 +215,17 @@ t("Data: opportunity history is consistent (stage path, wins, close after create
   const f = E.funnel(O);
   for (let s = 1; s < 5; s++) if (f[s].count > f[s - 1].count) throw new Error("funnel grows at " + f[s].stage);
 });
+t("Coverage: Omitted deals are shown by category but count in no coverage figure", () => {
+  const base = { ...clean, stage: "Discovery", stageEntered: "2026-11-01", forecastCategory: "Omitted", amount: 500000 };
+  const c = E.coverage([...deals, base], ctx), c0 = E.coverage(deals, ctx);
+  near(c.raw, c0.raw); near(c.clean, c0.clean); near(c.weighted, c0.weighted); near(c.byCategory.Omitted, 500000); eq(c.omittedCount, 1);
+});
 t("Data: coverage reconciles to the deal list", () => {
   const c = E.coverage(D, dctx);
   const inQ = D.filter((d) => d.closeDate >= dctx.periodStart && d.closeDate <= dctx.periodEnd);
-  near(c.raw, inQ.reduce((a, d) => a + d.amount, 0));
-  near(Object.values(c.byCategory).reduce((a, b) => a + b, 0), c.raw);
+  near(c.raw, inQ.filter((d) => d.forecastCategory !== "Omitted").reduce((a, d) => a + d.amount, 0));
+  near(Object.values(c.byCategory).reduce((a, b) => a + b, 0), c.raw + c.omittedValue);
+  eq(c.inPeriodCount + c.omittedCount, inQ.length);
   if (c.clean > c.raw || c.weighted > c.raw) throw new Error("clean/weighted above raw");
 });
 t("Data: hygiene counts reconcile", () => {
