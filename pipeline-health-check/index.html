@@ -3447,13 +3447,18 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
 
   // ---------- Status filter (Show: All, Good, Watch list, Watch, Act) ----------
   const FNAME = { good: "Good", list: "Watch list", warn: "Watch", bad: "Act" };
+  // Tabs whose rows or tiles carry a Good / Watch / Act status. Elsewhere the Show bar can't do anything, so it's hidden.
+  const RATED_TABS = ["summary", "team", "hygiene", "activity", "marketing", "renewals", "metrics"];
   const fmatch = (lv, f) => f === "all" || (f === "list" ? lv !== "good" : lv === f);
   function applyFilter() {
     const f = document.body.dataset.f || "all", panel = document.querySelector("section.panel[role=tabpanel]:not([hidden])");
     document.querySelectorAll(".fempty, .fempty-msg").forEach((x) => x.remove());
     if (!panel) return;
+    const fbar = document.querySelector(".fbar"), rated = RATED_TABS.includes(panel.id.slice(2));
+    fbar.hidden = !rated;
+    if (!rated) return;
     const tagged = [...panel.querySelectorAll("[data-lv]")], shown = tagged.filter((el) => fmatch(el.dataset.lv, f)).length;
-    $("fcount").textContent = !tagged.length ? "Nothing on this tab is rated" : f === "all" ? tagged.length + " rated rows and tiles on this tab" : `Showing ${shown} of ${tagged.length} rated on this tab`;
+    $("fcount").textContent = f === "all" ? tagged.length + " rated rows and tiles on this tab" : `Showing ${shown} of ${tagged.length} rated on this tab`;
     if (f === "all") return;
     const boxes = new Set(tagged.map((el) => el.parentElement));
     for (const box of boxes) {
