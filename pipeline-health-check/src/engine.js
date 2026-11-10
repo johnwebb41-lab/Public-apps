@@ -1119,13 +1119,13 @@
     G("Pipeline", "stageProbability", "Stage probability", "The chance of a deal at each stage closing: Discovery 10%, Qualification 20%, Solution 40%, Proposal 60%, Negotiation 80%. Used for weighted coverage."),
 
     G("Pipeline hygiene", "health", "Deal health score", "Starts at 100 and loses points for each hygiene issue, weighted by how serious it is.", { formula: "100 × (1 − issue weights ÷ total possible weight)", threshold: "dealHealth", calc: "health" }),
-    G("Pipeline hygiene", "rule_pastClose", "Close date in the past", "The expected close date has passed but the deal is still open. Weight 3."),
-    G("Pipeline hygiene", "rule_noNextStep", "No next step", "No dated next step is logged, so nobody can see what happens next. Weight 2."),
-    G("Pipeline hygiene", "rule_stale", "No recent activity", "No logged activity for longer than the stale setting at the top (14 days by default). Weight 2."),
-    G("Pipeline hygiene", "rule_noAmount", "Missing amount", "The deal has no value, so it counts as £0 in every forecast. Weight 3."),
-    G("Pipeline hygiene", "rule_categoryMismatch", "Forecast category doesn't fit stage", "The forecast category is not allowed at this stage, such as Commit at Discovery. Weight 2."),
-    G("Pipeline hygiene", "rule_pushed", "Close date pushed 2+ times", "The close date has moved out at least twice: a sign the deal is slipping. Weight 1."),
-    G("Pipeline hygiene", "rule_stuck", "Stuck in stage", "The deal has been in its current stage longer than the stage limit. Weight 1."),
+    G("Pipeline hygiene", "rule_pastClose", "Close date in the past", "The expected close date has passed but the deal is still open."),
+    G("Pipeline hygiene", "rule_noNextStep", "No next step", "No dated next step is logged, so nobody can see what happens next."),
+    G("Pipeline hygiene", "rule_stale", "No recent activity", "No logged activity for longer than the stale setting at the top (14 days by default)."),
+    G("Pipeline hygiene", "rule_noAmount", "Missing amount", "The deal has no value, so it counts as £0 in every forecast."),
+    G("Pipeline hygiene", "rule_categoryMismatch", "Forecast category doesn't fit stage", "The forecast category is not allowed at this stage, such as Commit at Discovery."),
+    G("Pipeline hygiene", "rule_pushed", "Close date pushed 2+ times", "The close date has moved out at least twice: a sign the deal is slipping."),
+    G("Pipeline hygiene", "rule_stuck", "Stuck in stage", "The deal has been in its current stage longer than the stage limit."),
     G("Pipeline hygiene", "priority", "Next-step priority", "High, Medium or Low, set by how serious the issue is and how late the stage. Actions are ranked by priority × deal value."),
 
     G("MEDDPICC", "meddpicc", "MEDDPICC", "A deal qualification checklist: eight things a seller should know before relying on a deal. Each is scored 0 (unknown), 1 (partly evidenced) or 2 (confirmed with the buyer).", { more: "Each stage has a minimum score for each element. A score below the minimum is a gap and creates a next step.", calc: "meddpicc" }),
@@ -1258,6 +1258,14 @@
     attrition: W("the HR system", "headcount plan, finance planning model, people analytics"),
   };
   GLOSSARY.forEach((g) => { g.where = WHERE[g.key]; });
+  // Hygiene weights are read from RULES, so the definitions can't drift from what the engine scores.
+  const WEIGHT_WHY = { 3: "Weight 3 issues break the forecast outright: the deal counts as £0, or it should already have closed.", 2: "Weight 2 issues suggest nobody is actively working the deal, or it sits in the wrong part of the forecast.", 1: "Weight 1 issues are early warning signs, worth watching rather than errors." };
+  const RULES_CAVEAT = "This demo uses a fixed list of seven rules. In a live business the rules, their definitions and their weights can be changed at any time, so check the current settings with whoever owns RevOps.";
+  for (const r of RULES) { const g = GLOSSARY.find((x) => x.key === "rule_" + r.id);
+    g.short += ` Weight ${r.weight} of ${MAX_WEIGHT}.`; g.more = WEIGHT_WHY[r.weight] + " " + RULES_CAVEAT; }
+  { const h = GLOSSARY.find((x) => x.key === "health");
+    h.more = `The seven rules and their weights: ${RULES.map((r) => r.label.toLowerCase() + " (" + r.weight + ")").join(", ")}. Together they add up to ${MAX_WEIGHT}, so a deal hitting every rule scores 0. ` +
+      "Issues are weighted rather than counted: one missing amount (3) costs more than being stuck and pushed (1 + 1). " + RULES_CAVEAT; }
   const GLOSS = Object.fromEntries(GLOSSARY.map((g) => [g.key, g]));
 
   // ---------- Sample calculations: worked examples, computed with the same engine functions the page uses ----------

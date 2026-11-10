@@ -590,6 +590,7 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
       <div class="card">
         <div class="head"><h3>Issues by rule <button type="button" class="help" data-def="health"></button></h3><div class="sub">Select a row, or use the Issue filter, to narrow the deal list</div></div>
         <div class="tablewrap"><table id="ruleTable"></table></div>
+        <p class="skey" id="ruleKey"></p>
       </div>
       <div class="card">
         <div class="head"><h3>By owner</h3><div class="sub">Share of each rep's deals with at least one issue</div></div>
@@ -1317,6 +1318,7 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
       h.byRule.slice().sort((a, b) => b.count - a.count).map((r) =>
         `<tr class="ruleRow${HF.issue === r.id ? " on" : ""}" data-rule="${r.id}" tabindex="0"><td>${esc(r.label)}${help("rule_" + r.id)}${r.id === "stale" ? ` <span class="sub">(&gt;${c.staleDays}d)</span>` : ""}</td><td class="n">${r.weight}</td><td class="n">${r.count}</td><td class="n">${gbpK(r.value)}</td></tr>`).join("") + "</tbody>";
 
+    $("ruleKey").innerHTML = `Weights show how serious each issue is: 3 breaks the forecast (£0 or overdue), 2 means the deal isn't being worked or sits in the wrong category, 1 is an early warning. They add up to ${E.MAX_WEIGHT}, and health = 100 × (1 − weights hit ÷ ${E.MAX_WEIGHT}). These seven rules and their weights are demo settings that a business can change at any time. <a class="golink" href="#calc-health">Worked example →</a>`;
     $("ownerTable").innerHTML = `<thead><tr><th>Owner</th><th class="n">Deals</th><th class="n">Flagged</th><th class="n">Actions</th></tr></thead><tbody>` +
       h.byOwner.map((o) => `<tr><td>${esc(o.owner)}<div class="sub">${E.repOf(o.owner).team}</div></td><td class="n">${o.deals}</td><td class="n">${o.flagged} <span class="sub">(${pct(o.flagged / o.deals)})</span></td><td class="n">${h.actions.filter((a) => a.owner === o.owner).length}</td></tr>`).join("") + "</tbody>";
 

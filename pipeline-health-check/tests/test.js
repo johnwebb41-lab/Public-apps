@@ -517,6 +517,11 @@ t("Definitions: every term says where the data usually lives, with other places 
     if (g.where.others.split(",").length < 2) throw new Error(g.key + " needs more than one other place"); }
   eq(Object.keys(E.WHERE).length, E.GLOSSARY.length, "no stray entries");
 });
+t("Definitions: each hygiene rule states its real weight, and the health entry lists all seven", () => {
+  for (const r of E.RULES) { const g = E.GLOSS["rule_" + r.id]; if (!g.short.includes(`Weight ${r.weight} of ${E.MAX_WEIGHT}.`)) throw new Error(r.id + ": " + g.short);
+    if (!/changed at any time/.test(g.more)) throw new Error(r.id + " caveat"); if ((g.short.match(/Weight \d/g) || []).length !== 1) throw new Error(r.id + " weight stated twice"); }
+  const h = E.GLOSS.health.more; for (const r of E.RULES) if (!h.includes(r.label.toLowerCase() + " (" + r.weight + ")")) throw new Error("health entry missing " + r.id);
+});
 t("Page: every ? icon points at a term that has a definition", () => {
   const page = require("fs").readFileSync(require("path").join(__dirname, "../src/page.html"), "utf8");
   const used = [...page.matchAll(/data-def="([A-Za-z_]+)"/g), ...page.matchAll(/help\("([A-Za-z_]+)"\)/g)].map((m) => m[1]);
