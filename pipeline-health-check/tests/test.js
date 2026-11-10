@@ -161,8 +161,8 @@ t("Generated history is sane", () => {
 const D = E.generateDeals("2026-11-04"), H = E.generateHistory(), O = E.generateOppHistory(), MM = E.saasMetrics(H);
 const dctx = { ...ctx, quota: 2200000, closedWon: 1150000, winRate: E.ttmWinRate(O) };
 const iso = /^\d{4}-\d{2}-\d{2}$/;
-t("Data: 66 deals, unique IDs, valid owners, stages and categories", () => {
-  eq(D.length, 66); eq(new Set(D.map((d) => d.id)).size, 66);
+t("Data: 69 deals, unique IDs, valid owners, stages and categories", () => {
+  eq(D.length, 69); eq(new Set(D.map((d) => d.id)).size, 69);
   const cats = ["Pipeline", "Best Case", "Commit", "Omitted"];
   for (const d of D) {
     if (!E.OWNERS.includes(d.owner)) throw new Error("owner " + d.owner);
@@ -539,6 +539,13 @@ t("Making up the forecast: each deal sits in one lever, and the uplifts match th
   // Fixing F really does add that much: the same deal with a next step lands its full rate.
   const fixed = E.landing(ds.map((d) => (d.id === "F" ? { ...d, nextStep: "Call" } : d)), c).likely - E.landing(ds, c).likely; near(fixed, by.fix.value);
   near(g.gap, Math.max(0, c.quota - E.landing(ds, c).likely));
+});
+t("Demo headline: likely landing about 98% of quota, with raw coverage above what's needed", () => {
+  const opps = E.generateOppHistory(), cal = E.calibrateRates(E.enrichOpps(opps));
+  const c = { ...ctx, quota: 2200000, closedWon: 1150000, winRate: Math.round(E.ttmWinRate(opps) * 100) / 100, catRates: cal.rates };
+  const DD = E.attributeDeals(E.generateDeals("2026-11-04")), l = E.landing(DD, c), cv = E.coverage(DD, c);
+  if (l.likelyPct < 0.975 || l.likelyPct >= 0.99) throw new Error("likely " + l.likelyPct);
+  if (cv.rawCoverage < cv.required) throw new Error("raw coverage " + cv.rawCoverage + " under " + cv.required);
 });
 t("Page: every ? icon points at a term that has a definition", () => {
   const page = require("fs").readFileSync(require("path").join(__dirname, "../src/page.html"), "utf8");

@@ -134,6 +134,12 @@
     Object.assign(deals[19], { stage: "Qualification", forecastCategory: "Commit", stageEntered: addDays(asOf, -9), meddpicc: MEDDPICC_REQ.Qualification.slice() });
     deals[23].pushCount = 2;
     deals[27].stageEntered = addDays(asOf, -(stageOf(deals[27].stage).maxAge + 4));
+    // Three clean, well-evidenced deals that land the quarter at about 98% of quota with coverage just above what's needed.
+    const extra = (n, account, owner, stage, forecastCategory, amount, closeIn, step) => ({ id: "OPP-" + (1040 + n), account, type: "New Business", owner, team: repOf(owner).team, stage, amount,
+      closeDate: addDays(asOf, closeIn), lastActivity: addDays(asOf, -2), stageEntered: addDays(asOf, -7), nextStep: step, forecastCategory, pushCount: 0, discount: 0.05, approval: "Not needed", nonStandard: "", meddpicc: MEDDPICC_REQ[stage].slice() });
+    deals.push(extra(66, "Fenwick Capital", "Tom Okafor", "Proposal", "Best Case", 40000, 38, "Mutual action plan review"),
+      extra(67, "Saltbrook Logistics", "Elena Ruiz", "Negotiation", "Commit", 32000, 31, "Legal redlines"),
+      extra(68, "Ridgeway Foods", "Marcus Bell", "Solution", "Pipeline", 50000, 44, "Technical demo"));
     return deals;
   }
 
