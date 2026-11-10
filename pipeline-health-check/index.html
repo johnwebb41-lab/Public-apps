@@ -357,6 +357,9 @@ tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
 .dgrid p { margin: 0; }
 /* Manager view */
 .qcell { min-width: 64px; }
+/* Sample calculations: each box's title sticks under the pinned tabs while you scroll through that box */
+#p-calcs .card > .head { position: sticky; top: calc(var(--sbh, 96px) - 1px); z-index: 5; background: var(--surface); margin-top: -10px; padding-top: 10px; }
+#p-calcs .card { scroll-margin-top: 0; }
 #mvTeams td:first-child, #thrTable td:first-child { min-width: 190px; }
 #mvTeams td:nth-child(6) { min-width: 120px; }
 .tspark svg { width: 92px; height: 30px; display: block; }
@@ -997,8 +1000,8 @@ tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
   <!-- SAMPLE CALCULATIONS -->
   <section class="panel" id="p-calcs" role="tabpanel" aria-labelledby="t-calcs" hidden>
     <div class="card prose" style="max-width:none">
-      <div class="eyebrow">Sample calculations</div>
-      <h2>How the numbers are worked out</h2>
+      <div class="head"><div class="eyebrow">Sample calculations</div>
+      <h2>How the numbers are worked out</h2></div>
       <p>Each example uses small, round, made-up numbers so every step can be followed. They're calculated by the same engine as the rest of the page and checked by the automated tests, so the arithmetic is tested, not typed.</p>
       <nav class="jump" id="calcJump" aria-label="Worked examples"></nav>
     </div>
@@ -3356,6 +3359,9 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
     applyFilter();
   }));
   const SB = $("stickybar");
+  // Box titles on Sample calculations stick just under the pinned tabs, so they need the bar's live height.
+  const setSbh = () => document.documentElement.style.setProperty("--sbh", SB.offsetHeight + "px");
+  setSbh(); if (window.ResizeObserver) new ResizeObserver(setSbh).observe(SB); else addEventListener("resize", setSbh);
   addEventListener("scroll", () => SB.classList.toggle("stuck", SB.getBoundingClientRect().top <= 0 && scrollY > 0), { passive: true });
 
   function render() {
