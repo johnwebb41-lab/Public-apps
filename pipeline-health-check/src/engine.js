@@ -545,6 +545,33 @@
       floorPct: q ? (c + floor) / q : 0, likelyPct: q ? (c + likely) / q : 0, stretchPct: q ? (c + stretch) / q : 0 };
   }
 
+  // ---------- Making up the forecast: where the gap to quota could come from ----------
+  // Uses only open deals already in the pipeline. Each deal sits in one lever only, and each uplift follows the
+  // landing forecast's own maths, so "fix" restores the half a flagged deal loses, "promote" moves Best Case to the
+  // Commit rate, and "pull" adds a next-quarter deal at its normal rate (as the scenario planner does).
+  const GAP_LEVERS = [
+    { key: "fix", label: "Fix the issues on Commit and Best Case deals", owner: "Reps, with their manager",
+      how: "Deals with a hygiene issue count at half their rate. Clear the issue (a dated next step, a real close date, fresh activity) and they count in full.",
+      pick: (d, c) => inPeriodOf(c)(d) && d.flags.length && (d.forecastCategory === "Commit" || d.forecastCategory === "Best Case"), uplift: (d, R) => (d.amount || 0) * (R[d.forecastCategory] || 0) * 0.5 },
+    { key: "promote", label: "Firm up late-stage Best Case to Commit", owner: "Managers, in deal reviews",
+      how: "Clean Best Case deals at Proposal or Negotiation. Confirm the economic buyer and the paper process with dates; if they hold, call the deal Commit.",
+      pick: (d, c) => inPeriodOf(c)(d) && !d.flags.length && d.forecastCategory === "Best Case" && stageIndex(d.stage) >= 3, uplift: (d, R) => (d.amount || 0) * Math.max(0, R.Commit - R["Best Case"]) },
+    { key: "pull", label: "Pull in late-stage deals planned for next month", owner: "Reps, with deal desk",
+      how: "Clean Commit and Best Case deals at Proposal or Negotiation due in the first month after quarter end. Agree a reason to sign this quarter, such as a start date or a price held to the end of the quarter.",
+      pick: (d, c) => d.closeDate > c.periodEnd && d.closeDate <= addDays(c.periodEnd, 31) && !d.flags.length && stageIndex(d.stage) >= 3 && (d.forecastCategory === "Commit" || d.forecastCategory === "Best Case"), uplift: (d, R) => (d.amount || 0) * (R[d.forecastCategory] || 0) },
+  ];
+  function gapPlan(deals, ctx) {
+    const R = ctx.catRates || CAT_RATE, l = landing(deals, ctx), used = new Set();
+    const checked = deals.map((d) => checkDeal(d, ctx));
+    const levers = GAP_LEVERS.map((lv) => {
+      const ds = checked.filter((d) => !used.has(d.id) && lv.pick(d, ctx)).map((d) => ({ ...d, uplift: lv.uplift(d, R), lever: lv.key })).filter((d) => d.uplift > 0).sort((a, b) => b.uplift - a.uplift);
+      ds.forEach((d) => used.add(d.id));
+      return { key: lv.key, label: lv.label, owner: lv.owner, how: lv.how, deals: ds, value: sum(ds, (d) => d.uplift) };
+    });
+    const total = sum(levers, (x) => x.value), gap = Math.max(0, ctx.quota - l.likely);
+    return { quota: ctx.quota, likely: l.likely, gap, levers, total, covers: total >= gap, deals: levers.flatMap((x) => x.deals).sort((a, b) => b.uplift - a.uplift) };
+  }
+
   // ---------- Pipeline confidence (0-100) ----------
   function confidence(deals, ctx, forecastAcc) {
     const clamp = (v) => Math.max(0, Math.min(1, v));
@@ -1104,6 +1131,7 @@
     G("Forecast and coverage", "attainment", "Quota attainment", "How much of the quota has been booked: closed won ÷ quota.", { formula: "closed won ÷ quota", threshold: "attainment", calc: "attainment" }),
     G("Forecast and coverage", "landing", "Landing forecast", "Where the quarter is expected to finish, read three ways: floor, likely and stretch.", { more: "Floor counts only clean Commit deals. Likely weights every open deal by its forecast category, halving deals with hygiene issues. Stretch assumes all Commit and Best Case close.", formula: "closed won + Σ (deal amount × category rate × 0.5 if flagged)", threshold: "landing", calc: "landing" }),
     G("Forecast and coverage", "confidence", "Pipeline confidence", "A score out of 100 for how far the forecast can be trusted, based on clean data and buyer evidence.", { more: "Five parts: clean coverage (30 points), hygiene (20), MEDDPICC evidence on Commit and Best Case (20), past forecast accuracy (15) and how much of the gap clean Commit already covers (15).", threshold: "confidence", calc: "confidence" }),
+    G("Forecast and coverage", "gapPlan", "Making up the forecast", "Where the gap between the likely landing and quota could come from, using deals already in the pipeline: fix issues on Commit and Best Case deals, firm up late-stage Best Case, and pull in deals planned for next month.", { more: "Each deal counts in one lever only, and each uplift follows the landing forecast's own rates, so the figures add up. They're estimates of what's possible, not commitments, and new pipeline created now rarely closes in the same quarter." }),
     G("Forecast and coverage", "remaining", "Quota still to find", "The part of the quota not yet booked: quota − closed won. Coverage is measured against this.", { formula: "quota − closed won" }),
     G("Forecast and coverage", "coverage", "Pipeline coverage (raw)", "Open pipeline closing this quarter, as a multiple of the quota still to find. Deals the rep has marked Omitted are left out.", { formula: "in-quarter pipeline (excluding Omitted) ÷ quota still to find", calc: "coverage" }),
     G("Forecast and coverage", "cleanCoverage", "Clean coverage", "Coverage counting only deals with no hygiene issues. The gap between raw and clean shows how much pipeline rests on deals with problems.", { formula: "clean in-quarter pipeline ÷ quota still to find", calc: "coverage" }),
@@ -1193,6 +1221,7 @@
     attainment: W("CRM quota attainment reports", "incentive compensation tool, forecasting tool, sales leaderboards, finance's bookings report"),
     landing: W("the forecasting tool or the weekly forecast call", "CRM forecast module, a revenue intelligence tool such as Clari, BI dashboard, finance's spreadsheet model"),
     confidence: W("a score RevOps builds in the BI layer; few businesses have it off the shelf", "deal scores in a forecasting tool, conversation intelligence such as Gong, pipeline inspection dashboards"),
+    gapPlan: W("the weekly forecast call, where managers commit to closing the gap", "forecasting tool scenario views, deal review notes, a RevOps gap-to-plan spreadsheet, sales leadership's commit list"),
     remaining: W("CRM forecast or quota reports", "forecasting tool, BI dashboard, the weekly forecast call deck"),
     coverage: W("CRM pipeline reports filtered to close dates in the period", "forecasting tool, BI dashboard, board pack, quarterly business review deck"),
     cleanCoverage: W("a calculation RevOps builds in a BI tool or spreadsheet", "pipeline inspection in a forecasting tool, CRM data quality reports"),
@@ -1357,7 +1386,7 @@
   ];
 
   const api = {
-    THRESHOLDS, level, GROUPS, GLOSSARY, GLOSS, WHERE, SAMPLE_CALCS, slopeOf, trendOf, TREND_STEP, repQuarters, repStats, splitWhole, managerView, qStart, qEnd, REP_QS,
+    THRESHOLDS, level, gapPlan, GAP_LEVERS, GROUPS, GLOSSARY, GLOSS, WHERE, SAMPLE_CALCS, slopeOf, trendOf, TREND_STEP, repQuarters, repStats, splitWhole, managerView, qStart, qEnd, REP_QS,
     STAGES, RULES, MAX_WEIGHT, MEDDPICC, MEDDPICC_REQ, DISCOUNT_TIERS, OWNERS, REPS, TEAMS, PLAN, BENCH, NQ, CAT_RATE, RAMP_MONTHS,
     repOf, landing, confidence, commissionByTeam, COMPETITORS, enrichOpps, winLoss, calibrateRates, scenario, rampFactor, capacityPlan, generateActivity, healthScore, generateRenewals, renewalReport, RENEW_RATE, generateTouches, MODELS, attribution, parseCsv, toIsoDate, importDeals, importedReport, SDRS, CHANNELS, SOURCES, LEAD_START, attributeDeals, generateLeads, leadOutcomes, marketingReport, isSAL, isSQL, isOpp, tenureMonths, tenureExpectation, repTenure, teamReport, cohortSummary,
     generateDeals, checkDeal, hygieneReport, nextSteps, meddpiccGaps, dealDesk, approverFor, coverage,

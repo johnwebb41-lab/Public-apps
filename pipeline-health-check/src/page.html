@@ -515,6 +515,13 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
         <p class="skey">High is 75 or more, Medium 55–74, Low below 55. Each row shows how many of its points it earned.</p>
       </div>
     </div>
+    <div class="card" id="gapCard">
+      <div class="head"><h3>Making up the forecast <button type="button" class="help" data-def="gapPlan"></button></h3><div class="sub">Where the gap to quota could come from, using only deals already in the pipeline</div></div>
+      <p style="margin:0;max-width:96ch" id="gapText"></p>
+      <div class="tablewrap"><table id="gapTable"></table></div>
+      <div class="tablewrap"><table id="gapDeals"></table></div>
+      <p class="skey">"Could add" is the extra the likely landing gains if the action works, using the same calibrated rates as the forecast. Each deal sits in one lever only, so the figures add up. They're estimates of what's possible, not commitments. Each manager's own version is on the Manager view.</p>
+    </div>
     <div class="card chart">
       <div class="head"><h3>FY26 full year</h3><div class="sub">Q1 to Q3 actual bookings against quota, Q4 closed so far and its likely landing. Quarterly quotas step up into Q4, as many plans do</div></div>
       <div class="facts" id="fyFacts"></div>
@@ -1627,6 +1634,19 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
     ].map(([k, v, n]) => `<div><span class="k">${k}${fh(k)}</span><span class="v">${v}</span><span class="note">${n}</span></div>`).join("");
 
     $("landChart").innerHTML = landChart(l);
+    // Making up the forecast
+    const GP = E.gapPlan(deals, c);
+    $("gapText").innerHTML = GP.gap > 0
+      ? `Likely landing is <b>${gbpK(GP.likely)}</b> against a <b>${gbpK(GP.quota)}</b> quota, a gap of <b>${gbpK(GP.gap)}</b>. Deals already in the pipeline could add up to <b>${gbpK(GP.total)}</b> to the likely landing${GP.covers ? `, enough to close the gap if the work gets done` : `, which isn't enough on its own`}. With ${cv.daysLeft} days left and a typical cycle of ${Math.round(TTM_CYCLE)} days, new pipeline created now is unlikely to close this quarter, so the gap has to come from these deals.`
+      : `Likely landing of <b>${gbpK(GP.likely)}</b> is already at or above quota. These levers build headroom of up to <b>${gbpK(GP.total)}</b>.`;
+    $("gapTable").innerHTML = `<thead><tr><th>Lever</th><th class="n">Deals</th><th class="n">Could add</th><th>What to do</th><th>Owner</th></tr></thead><tbody>` +
+      GP.levers.map((g) => `<tr><td><b>${esc(g.label)}</b></td><td class="n">${g.deals.length}</td><td class="n">${g.deals.length ? gbpK(g.value) : "–"}</td><td style="min-width:300px" class="sub">${esc(g.how)}</td><td>${esc(g.owner)}</td></tr>`).join("") +
+      `<tr class="avg"><td><b>All levers</b></td><td class="n">${GP.deals.length}</td><td class="n"><b>${gbpK(GP.total)}</b></td><td class="sub" colspan="2">${GP.gap > 0 ? "Against a gap of " + gbpK(GP.gap) : "Headroom above quota"}</td></tr></tbody>`;
+    const LVN = { fix: "Fix issues", promote: "Firm up to Commit", pull: "Pull in" };
+    $("gapDeals").innerHTML = `<thead><tr><th>Biggest moves</th><th>Lever</th><th>Stage</th><th class="n">Amount</th><th class="n">Could add</th><th class="n">Close</th><th>First step</th></tr></thead><tbody>` +
+      GP.deals.slice(0, 8).map((d) => { const st = E.nextSteps(d, c)[0];
+        return `<tr><td><div>${esc(d.account)}</div><div class="sub">${esc(d.owner)} · ${d.team}</div></td><td><span class="pill st-info">${LVN[d.lever]}</span></td><td>${d.stage}<div class="sub">${d.forecastCategory}</div></td>
+        <td class="n">${gbpK(d.amount)}</td><td class="n"><b>${gbpK(d.uplift)}</b></td><td class="n">${fmtDate(d.closeDate)}</td><td style="min-width:240px" class="sub">${st ? esc(st.text) : d.lever === "pull" ? "Agree a reason to sign this quarter." : "Confirm the economic buyer and paper process with dates."}</td></tr>`; }).join("") + "</tbody>";
     $("landTable").innerHTML = `<thead><tr><th>View</th><th class="n">Lands at</th><th class="n">Of quota</th><th>How it's worked out</th></tr></thead><tbody>
       <tr><td>Floor</td><td class="n">${gbpK(l.floor)}</td><td class="n">${pct(l.floorPct)}</td><td class="sub">Closed won + clean Commit deals at ${pct(CAL.rates.Commit)}</td></tr>
       <tr><td><b>Likely</b></td><td class="n"><b>${gbpK(l.likely)}</b></td><td class="n"><span class="pill st-${lvl}">${pct(l.likelyPct)}</span></td><td class="sub">Commit ${pct(CAL.rates.Commit)}, Best Case ${pct(CAL.rates["Best Case"])}, Pipeline ${pct(CAL.rates.Pipeline)}, calibrated from ${CAL.counts.Commit.deals + CAL.counts["Best Case"].deals + CAL.counts.Pipeline.deals} past deals; flagged deals halved</td></tr>
@@ -1966,6 +1986,17 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
     const t = parts.join("; ");
     return t.charAt(0).toUpperCase() + t.slice(1) + ".";
   }
+  // Each manager's own "making up the gap", from their team's deals against their team's share of quota.
+  function teamGap(t, c) {
+    const rs = E.REPS.filter((r) => r.team === t.name), sh = (k) => rs.reduce((a, r) => a + r[k], 0);
+    const tc = { ...c, quota: c.quota * sh("quotaShare"), closedWon: c.closedWon * sh("closedShare") };
+    const G = E.gapPlan(deals.filter((d) => d.team === t.name), tc), live = G.levers.filter((g) => g.deals.length);
+    const head = G.gap > 0
+      ? `Team likely landing is ${gbpK(G.likely)} against a ${gbpK(G.quota)} quota, a gap of <b>${gbpK(G.gap)}</b>. The team's own pipeline could add up to <b>${gbpK(G.total)}</b>${G.covers ? ", enough to close it if the work gets done." : `. That leaves about ${gbpK(G.gap - G.total)} that existing deals can't cover; with the quarter this far gone, it's worth resetting expectations in the forecast call rather than hoping for new deals.`}`
+      : `Team likely landing of ${gbpK(G.likely)} is already at or above its ${gbpK(G.quota)} quota. The levers below would build headroom of up to <b>${gbpK(G.total)}</b>, which can offset a shortfall elsewhere.`;
+    return `<div class="support"><div class="box"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>Making up the gap: ${t.manager}'s team</b>${help("gapPlan")}</div><p style="margin:0">${head}</p>` +
+      (live.length ? `<div class="sbcols">${live.map((g) => `<div><div class="eyebrow">${esc(g.label)} · up to ${gbpK(g.value)}</div><ul>${g.deals.slice(0, 3).map((d) => `<li>${esc(d.account)} <span class="sub">(${esc(d.owner)}, ${d.stage}, ${gbpK(d.amount)})</span>: +${gbpK(d.uplift)}</li>`).join("")}${g.deals.length > 3 ? `<li class="sub">and ${g.deals.length - 3} more</li>` : ""}</ul></div>`).join("")}</div>` : `<p class="sub" style="margin:0">No open deals fit these levers.</p>`) + `</div></div>`;
+  }
   function renderTeam(c) {
     const MV = E.managerView(opps, deals, c), sel = $("mvTeam").value, teams = MV.teams.filter((t) => !sel || t.name === sel), reps = teams.flatMap((t) => t.reps);
     const tm = sel && E.TEAMS.find((t) => t.name === sel), ql = MV.quarterLabels;
@@ -1992,6 +2023,7 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
           <td class="n">${gbpK(r.avgWon)}</td><td class="n">${Math.round(r.cycle)} d</td><td class="n">${m == null ? "–" : `<span class="pill st-${E.level("meetings", m)}">${m.toFixed(1)}</span>`}</td>
           <td class="n">${pct(r.cleanRate)} <span class="sub">(${r.openDeals})</span></td><td class="mvread">${esc(mvRead(r))}</td></tr>`; }).join("") +
         `<tr class="avg"><td><b>Team</b><div class="sub">weighted by quota</div></td>${t.quarters.map(qtd).join("")}<td><div class="tspark">${trendSpark(t.quarters, t.trend.level)}</div><div class="sub">${t.trend.label}</div></td><td></td><td class="sub">${t.behind} behind</td><td class="n">${pct(t.q4ToDate)}</td><td colspan="6"></td></tr></tbody></table></div>
+      ${teamGap(t, c)}
       <p class="skey">Metrics only. Quarter cells: Good at 100% of quota or more, Watch from 90%, Act below. Trend: Improving or Declining at 4 points a quarter or more, from a straight line through the quarters worked. The row status, used by the Show filter, is attainment against what's expected at the rep's tenure. Q4 so far isn't rated: the quarter is only half done.</p></div>`;
     }).join("");
   }

@@ -528,6 +528,18 @@ t("Definitions: each hygiene rule states its real weight, and the health entry l
     if (!/changed at any time/.test(g.more)) throw new Error(r.id + " caveat"); if ((g.short.match(/Weight \d/g) || []).length !== 1) throw new Error(r.id + " weight stated twice"); }
   const h = E.GLOSS.health.more; for (const r of E.RULES) if (!h.includes(r.label.toLowerCase() + " (" + r.weight + ")")) throw new Error("health entry missing " + r.id);
 });
+t("Making up the forecast: each deal sits in one lever, and the uplifts match the landing maths", () => {
+  const R = { Commit: 0.8, "Best Case": 0.45, Pipeline: 0.15, Omitted: 0 }, c = { ...ctx, catRates: R };
+  const b = { ...clean, stage: "Negotiation" };
+  const ds = [{ ...b, id: "F", amount: 100000, forecastCategory: "Commit", nextStep: "" }, { ...b, id: "P", amount: 200000, forecastCategory: "Best Case" },
+    { ...b, id: "N", amount: 50000, forecastCategory: "Commit", closeDate: "2027-01-20" }, { ...b, id: "X", amount: 70000, forecastCategory: "Commit", closeDate: "2027-03-20" }];
+  const g = E.gapPlan(ds, c), by = Object.fromEntries(g.levers.map((x) => [x.key, x]));
+  near(by.fix.value, 100000 * 0.8 * 0.5); near(by.promote.value, 200000 * 0.35); near(by.pull.value, 50000 * 0.8);
+  eq(g.deals.length, 3, "deal X is too far out to pull"); eq(new Set(g.deals.map((d) => d.id)).size, g.deals.length);
+  // Fixing F really does add that much: the same deal with a next step lands its full rate.
+  const fixed = E.landing(ds.map((d) => (d.id === "F" ? { ...d, nextStep: "Call" } : d)), c).likely - E.landing(ds, c).likely; near(fixed, by.fix.value);
+  near(g.gap, Math.max(0, c.quota - E.landing(ds, c).likely));
+});
 t("Page: every ? icon points at a term that has a definition", () => {
   const page = require("fs").readFileSync(require("path").join(__dirname, "../src/page.html"), "utf8");
   const used = [...page.matchAll(/data-def="([A-Za-z_]+)"/g), ...page.matchAll(/help\("([A-Za-z_]+)"\)/g)].map((m) => m[1]);
