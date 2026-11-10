@@ -357,9 +357,9 @@ tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
 .dgrid p { margin: 0; }
 /* Manager view */
 .qcell { min-width: 64px; }
-/* Sample calculations: each box's title sticks under the pinned tabs while you scroll through that box */
-#p-calcs .card > .head { position: sticky; top: calc(var(--sbh, 96px) - 1px); z-index: 5; background: var(--surface); margin-top: -10px; padding-top: 10px; }
-#p-calcs .card { scroll-margin-top: 0; }
+/* Every tab: each box's title sticks under the pinned tabs while you scroll through that box, then hands over to the next */
+section.panel .card > .head, section.panel .card > .toolbar:first-child { position: sticky; top: calc(var(--sbh, 96px) - 1px); z-index: 5; background: var(--surface); margin-top: -10px; padding-top: 10px; }
+section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom: 1px solid var(--line); }
 #mvTeams td:first-child, #thrTable td:first-child { min-width: 190px; }
 #mvTeams td:nth-child(6) { min-width: 120px; }
 .tspark svg { width: 92px; height: 30px; display: block; }
@@ -987,8 +987,8 @@ tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
   <!-- DEFINITIONS -->
   <section class="panel" id="p-defs" role="tabpanel" aria-labelledby="t-defs" hidden>
     <div class="card prose" style="max-width:none">
-      <div class="eyebrow">Definitions</div>
-      <h2>What every measure means</h2>
+      <div class="head"><div class="eyebrow">Definitions</div>
+      <h2>What every measure means</h2></div>
       <p>Plain-English definitions for every metric, hygiene rule and MEDDPICC element on the page. The same wording appears when you hover a <span class="helpdemo" aria-hidden="true">?</span> next to a measure. Where there's a worked example, the link takes you to Sample calculations.</p>
       <label class="defsearch" for="defQ"><span class="sub">Search the definitions</span><input id="defQ" type="search" placeholder="Try NRR, champion or coverage" autocomplete="off"></label>
       <nav class="jump" id="defJump" aria-label="Definition groups"></nav>
@@ -1017,8 +1017,8 @@ tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
   <!-- METHOD -->
   <section class="panel" id="p-method" role="tabpanel" aria-labelledby="t-method" hidden>
     <div class="card prose">
-      <div class="eyebrow">How it works</div>
-      <h2>Three layers, one source of truth</h2>
+      <div class="head"><div class="eyebrow">How it works</div>
+      <h2>Three layers, one source of truth</h2></div>
       <ol class="steps">
         <li><b>Fictitious data.</b> <span id="dataLine"></span> All of it is generated from fixed seeds, so the same numbers appear every time.</li>
         <li><b>Calculation engine.</b> Plain, separately tested functions for hygiene, coverage, landing, confidence, commission, marketing, renewals, capacity and attribution. The page only displays what the engine returns, so the tabs can't contradict each other.</li>
@@ -1027,8 +1027,8 @@ tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
       <p>Read the tabs in order: Executive summary first for the answer, then the tabs behind it for the evidence. The assumptions at the top of the page feed every tab.</p>
     </div>
     <div class="card prose" style="max-width:none">
-      <div class="eyebrow">How I built it, and how I'd do it for real</div>
-      <h2>Directed by a RevOps practitioner, built with AI</h2>
+      <div class="head"><div class="eyebrow">How I built it, and how I'd do it for real</div>
+      <h2>Directed by a RevOps practitioner, built with AI</h2></div>
       <div class="grid2" style="align-items:start">
         <ol class="steps">
           <li><b>Start from the decision, not the data.</b> I began with the questions a CRO asks at quarter end and worked back to the measures that answer them.</li>
@@ -1048,7 +1048,7 @@ tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
     </div>
     <div class="grid2">
       <div class="card prose">
-        <div class="eyebrow">Reading the colours</div>
+        <div class="head"><div class="eyebrow">Reading the colours</div></div>
         <ul class="steps">
           <li>Green, amber and red mean the same on every tab; the words change to suit the measure (On track, Healthy, Ahead).</li>
           <li>Every red or amber says why: a reason line on each metric tile, a "Why" column for teams, the points taken off each deal's health score, and a line under each table giving the exact thresholds.</li>
@@ -1056,7 +1056,7 @@ tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
         </ul>
       </div>
       <div class="card prose">
-        <div class="eyebrow">Who sees what</div>
+        <div class="head"><div class="eyebrow">Who sees what</div></div>
         <ul class="steps">
           <li><b>Executives</b> see every team, manager and rep.</li>
           <li><b>Team leads</b> see commission for their own team and reps only, on the Commission tab and in the scenario planner. Commission appears nowhere else.</li>
@@ -1066,7 +1066,7 @@ tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
     </div>
     <div class="grid2">
       <div class="card prose">
-        <div class="eyebrow">The professor's three rules</div>
+        <div class="head"><div class="eyebrow">The professor's three rules</div></div>
         <ul class="steps">
           <li><b>Trust the data, then the coverage, then the trend.</b> Dirty pipeline inflates coverage, and inflated coverage hides a weak forecast.</li>
           <li><b>Calibrate before you forecast.</b> Use the rates at which your own deals have actually closed, not rules of thumb.</li>
@@ -1074,7 +1074,7 @@ tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
         </ul>
       </div>
       <div class="card prose">
-        <div class="eyebrow">What review changed</div>
+        <div class="head"><div class="eyebrow">What review changed</div></div>
         <ul class="steps">
           <li>Coverage is measured against quota still to find, with the target set by win rate rather than a fixed 3x.</li>
           <li>Coverage is shown with and without deals that have issues; the gap is the case for pipeline hygiene.</li>
@@ -3359,7 +3359,7 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
     applyFilter();
   }));
   const SB = $("stickybar");
-  // Box titles on Sample calculations stick just under the pinned tabs, so they need the bar's live height.
+  // Box titles on every tab stick just under the pinned tabs, so they need the bar's live height.
   const setSbh = () => document.documentElement.style.setProperty("--sbh", SB.offsetHeight + "px");
   setSbh(); if (window.ResizeObserver) new ResizeObserver(setSbh).observe(SB); else addEventListener("resize", setSbh);
   addEventListener("scroll", () => SB.classList.toggle("stuck", SB.getBoundingClientRect().top <= 0 && scrollY > 0), { passive: true });
