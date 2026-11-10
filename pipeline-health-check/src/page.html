@@ -332,6 +332,8 @@ tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
 .defitem p { margin: 0; max-width: 76ch; }
 .defitem p + p { margin-top: 4px; }
 .defitem .more { color: var(--muted); font-size: 14px; }
+.defitem .where { margin-top: 8px; font-size: 13.5px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--bg); border-radius: 0 6px 6px 0; }
+.defitem .where b { font-weight: 600; }
 .defitem .meta { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; margin-top: 8px; color: var(--muted); align-items: baseline; }
 .defitem code, .calc code { font: 12.5px var(--mono); color: var(--ink); background: var(--bg); padding: 2px 6px; border-radius: 4px; white-space: normal; }
 .defitem:target, .calc:target { animation: flash 1.8s ease; }
@@ -973,8 +975,8 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
     <div class="card prose" style="max-width:none">
       <div class="head"><div class="eyebrow">Definitions</div>
       <h2>What every measure means</h2></div>
-      <p>Plain-English definitions for every metric, hygiene rule and MEDDPICC element on the page. The same wording appears when you hover a <span class="helpdemo" aria-hidden="true">?</span> next to a measure. Where there's a worked example, the link takes you to Sample calculations.</p>
-      <label class="defsearch" for="defQ"><span class="sub">Search the definitions</span><input id="defQ" type="search" placeholder="Try NRR, champion or coverage" autocomplete="off"></label>
+      <p>Plain-English definitions for every metric, hygiene rule and MEDDPICC element on the page. The same wording appears when you hover a <span class="helpdemo" aria-hidden="true">?</span> next to a measure. Where there's a worked example, the link takes you to Sample calculations. Each entry also says where that information usually lives in a business. Every company keeps its data differently, so treat that as a guide to where to look first, not the only place it could be.</p>
+      <label class="defsearch" for="defQ"><span class="sub">Search the definitions</span><input id="defQ" type="search" placeholder="Try NRR, champion, coverage or CRM" autocomplete="off"></label>
       <nav class="jump" id="defJump" aria-label="Definition groups"></nav>
     </div>
     <div id="defGroups" class="panel" style="gap:18px"></div>
@@ -1984,11 +1986,12 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
     let shown = 0;
     $("defJump").innerHTML = E.GROUPS.map((g) => `<a href="#dg-${slug(g)}">${g}</a>`).join("");
     $("defGroups").innerHTML = E.GROUPS.map((g) => {
-      const items = E.GLOSSARY.filter((d) => d.group === g && (!q || (d.term + " " + d.short + " " + (d.more || "") + " " + (d.formula || "")).toLowerCase().includes(q)));
+      const items = E.GLOSSARY.filter((d) => d.group === g && (!q || (d.term + " " + d.short + " " + (d.more || "") + " " + (d.formula || "") + " " + (d.where ? d.where.usual + " " + d.where.others : "")).toLowerCase().includes(q)));
       shown += items.length;
       if (!items.length) return "";
       return `<div class="card" id="dg-${slug(g)}"><div class="head"><h3>${g}</h3></div><div class="deflist">` + items.map((d) => `<div class="defitem" id="def-${d.key}"><h4>${esc(d.term)}</h4><div><p>${esc(d.short)}</p>${d.more ? `<p class="more">${esc(d.more)}</p>` : ""}
-        <div class="meta">${d.formula ? `<span>Formula: <code>${esc(d.formula)}</code></span>` : ""}${d.threshold ? `<span>${thrLine(d.threshold)}.</span>` : ""}${d.calc ? `<a class="golink" href="#calc-${d.calc}">Worked example →</a>` : ""}${d.link ? `<a class="golink" href="#${d.link}">See the lines →</a>` : ""}</div></div></div>`).join("") + `</div></div>`;
+        <div class="meta">${d.formula ? `<span>Formula: <code>${esc(d.formula)}</code></span>` : ""}${d.threshold ? `<span>${thrLine(d.threshold)}.</span>` : ""}${d.calc ? `<a class="golink" href="#calc-${d.calc}">Worked example →</a>` : ""}${d.link ? `<a class="golink" href="#${d.link}">See the lines →</a>` : ""}</div>
+        ${d.where ? `<p class="where"><b>Where to find it:</b> usually ${esc(d.where.usual)}. It isn't always kept there and could sit in a number of places (${esc(d.where.others)}).</p>` : ""}</div></div>`).join("") + `</div></div>`;
     }).join("");
     $("defNone").hidden = shown > 0;
   }

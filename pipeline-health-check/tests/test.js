@@ -512,6 +512,11 @@ t("Sample calculations: every example runs, and the worked figures are right", (
   near(R.efficiency.value, 1200000 / (900000 * 0.78 / 12)); eq(R.confidence.value, 60); near(R.tenure.value, 0.66 / 0.7);
   eq(R.cycle.value, 82); near(R.velocity.value, 40 * 50000 * 0.3 / 90); eq(E.dealCommission(50000, 0.1, 200000, 180000, 1.5), 6500);
 });
+t("Definitions: every term says where the data usually lives, with other places it may be", () => {
+  for (const g of E.GLOSSARY) { if (!g.where || !g.where.usual || !g.where.others) throw new Error("no 'where to find it' for " + g.key);
+    if (g.where.others.split(",").length < 2) throw new Error(g.key + " needs more than one other place"); }
+  eq(Object.keys(E.WHERE).length, E.GLOSSARY.length, "no stray entries");
+});
 t("Page: every ? icon points at a term that has a definition", () => {
   const page = require("fs").readFileSync(require("path").join(__dirname, "../src/page.html"), "utf8");
   const used = [...page.matchAll(/data-def="([A-Za-z_]+)"/g), ...page.matchAll(/help\("([A-Za-z_]+)"\)/g)].map((m) => m[1]);
