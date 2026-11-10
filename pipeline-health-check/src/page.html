@@ -322,6 +322,7 @@ tr.fempty td, .fempty-msg { color: var(--muted); font-size: 13.5px; }
 .tour-hl { scroll-margin: 170px 0 240px; }
 .hfilters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .hfilters select { max-width: 200px; }
+#aOrder { max-width: none; }
 /* Definitions and sample calculations */
 .defsearch { display: grid; gap: 4px; max-width: 460px; }
 .defsearch input { font: 15px var(--body); padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); }
@@ -583,7 +584,14 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
   <section class="panel" id="p-hygiene" role="tabpanel" aria-labelledby="t-hygiene" hidden>
     <div class="facts" id="hygFacts"></div>
     <div class="card">
-      <div class="head"><h3>Do these first</h3><div class="sub">Every recommended action across the pipeline, ranked by priority × deal value</div></div>
+      <div class="toolbar">
+        <div class="head" style="border:0;padding:0"><h3>Do these first <button type="button" class="help" data-def="priority"></button></h3><div class="sub" id="actSub">Every recommended action across the pipeline, ranked by priority × deal value</div></div>
+        <div class="hfilters">
+          <label class="pickrep" for="aPri">Priority <select id="aPri"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option></select></label>
+          <label class="pickrep" for="aOrder">Order <select id="aOrder"><option value="rank">Recommended (priority × value)</option><option value="pri">Priority, then value</option><option value="value">Deal value, largest first</option><option value="close">Close date, soonest first</option><option value="owner">Owner, A to Z</option></select></label>
+          <label class="pickrep" for="aShow">Show <select id="aShow"><option value="10">Top 10</option><option value="25">Top 25</option><option value="all">All</option></select></label>
+        </div>
+      </div>
       <div class="tablewrap"><table id="actionTable"></table></div>
     </div>
     <div class="grid2">
@@ -1311,8 +1319,16 @@ section.panel .card > .toolbar:first-child { padding-bottom: 12px; border-bottom
       [h.actions.filter((a) => a.priority === "High").length, "High-priority actions"],
     ].map(([v, k]) => `<div><span class="v">${v}</span><span class="k">${k}${fh(k)}</span></div>`).join("");
 
-    $("actionTable").innerHTML = `<thead><tr><th>Deal</th><th>Priority</th><th>Next step</th><th class="n">Value</th></tr></thead><tbody>` +
-      h.actions.slice(0, 10).map((a) => `<tr><td><div>${esc(a.account)}</div><div class="sub">${esc(a.owner)} · ${a.stage}</div></td><td>${priTag(a.priority)}</td><td><div>${esc(a.text)}</div><div class="sub">${esc(a.source)}</div></td><td class="n">${a.amount ? gbpK(a.amount) : "–"}</td></tr>`).join("") + "</tbody>";
+    // "Do these first": filter by priority and choose the order. Recommended order is the engine's priority × value ranking.
+    const closeOf = Object.fromEntries(h.deals.map((d) => [d.id, d.closeDate])), PRI_N = { High: 3, Medium: 2, Low: 1 };
+    const ORDERS = { rank: () => 0, pri: (a, b) => PRI_N[b.priority] - PRI_N[a.priority] || (b.amount || 0) - (a.amount || 0), value: (a, b) => (b.amount || 0) - (a.amount || 0) || PRI_N[b.priority] - PRI_N[a.priority],
+      close: (a, b) => (closeOf[a.dealId] < closeOf[b.dealId] ? -1 : closeOf[a.dealId] > closeOf[b.dealId] ? 1 : PRI_N[b.priority] - PRI_N[a.priority]), owner: (a, b) => a.owner.localeCompare(b.owner) || PRI_N[b.priority] - PRI_N[a.priority] };
+    const aPri = $("aPri").value, aOrd = $("aOrder").value, aN = $("aShow").value;
+    const acts = h.actions.filter((a) => !aPri || a.priority === aPri).slice().sort(ORDERS[aOrd]), shownActs = aN === "all" ? acts : acts.slice(0, +aN);
+    $("actSub").textContent = `${shownActs.length} of ${acts.length} ${aPri ? aPri.toLowerCase() + "-priority " : ""}actions, ${$("aOrder").selectedOptions[0].text.charAt(0).toLowerCase() + $("aOrder").selectedOptions[0].text.slice(1)}`;
+    $("actionTable").innerHTML = `<thead><tr><th class="n">#</th><th>Deal</th><th>Priority</th><th>Next step</th><th class="n">Value</th><th class="n">Close</th></tr></thead><tbody>` +
+      (shownActs.length ? "" : `<tr><td colspan="6" class="sub">No actions at this priority.</td></tr>`) +
+      shownActs.map((a, i) => `<tr><td class="n mono">${i + 1}</td><td><div>${esc(a.account)}</div><div class="sub">${esc(a.owner)} · ${a.stage}</div></td><td>${priTag(a.priority)}</td><td><div>${esc(a.text)}</div><div class="sub">${esc(a.source)}</div></td><td class="n">${a.amount ? gbpK(a.amount) : "–"}</td><td class="n">${fmtDate(closeOf[a.dealId])}</td></tr>`).join("") + "</tbody>";
 
     $("ruleTable").innerHTML = `<thead><tr><th>Rule</th><th class="n">Weight</th><th class="n">Deals</th><th class="n">Value</th></tr></thead><tbody>` +
       h.byRule.slice().sort((a, b) => b.count - a.count).map((r) =>
@@ -2116,6 +2132,7 @@ DEMO-008,Example Account Eight,Jo Park,Solution,"£38,000",31/12/2026,2026-10-27
 
   ["quota", "won", "wr", "stale"].forEach((id) => $(id).addEventListener("input", render));
   [["fIssue", "issue"], ["fTeam", "team"], ["ownerFilter", "owner"], ["fStage", "stage"], ["fCat", "cat"]].forEach(([id, k]) => $(id).addEventListener("change", () => { HF[k] = $(id).value; render(); }));
+  ["aPri", "aOrder", "aShow"].forEach((id) => $(id).addEventListener("change", render));
   $("mvTeam").addEventListener("change", () => { renderTeam(ctx()); applyFilter(); });
   $("repPick").addEventListener("change", render);
   $("viewAs").addEventListener("change", render);
